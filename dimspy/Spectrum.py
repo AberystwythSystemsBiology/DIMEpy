@@ -1,11 +1,11 @@
-import numpy as np, scipy.stats as stats, operator, pymzml
+import numpy as np, scipy.stats as stats, operator, pymzml, pickle as pkl
 from scipy.ndimage.filters import gaussian_filter1d
 from scipy.sparse import csc_matrix, eye, diags
 from scipy.sparse.linalg import spsolve
 
 
 class Spectrum(object):
-    def __init__(self, identifier, masses, intensities):
+    def __init__(self, identifier, masses=np.array([]), intensities=np.array([])):
         self.identifier = identifier
         self.masses = masses
         self.intensities = intensities
@@ -90,25 +90,23 @@ class Spectrum(object):
         if method == "log10":
             self.set_intensities(np.log10(self.intensities))
 
-    def pickle(self):
-        pass
+    def pickle(self, fp):
+        with open(fp, "wb") as output:
+            pkl.dump(self, output, pkl.HIGHEST_PROTOCOL)
 
-    def from_pickle(self):
-        pass
+    def from_pickle(self, fp):
+        with open(fp, "rb") as infile:
+            o = pkl.load(infile)
+        self.identifier = o.identifier
+        self.masses = o.masses
+        self.intensities = o.intensities
 
-class SpectrumLoader(object):
-    def __init__(self, identifier, filepath):
-        self.identifier = identifier
-        self.filepath = filepath
-
-    def from_mzml(self, polarity=None, scan_range="all", peak_type="peaks", ms1_p=5e-6, msn_p=5e-6):
+    def from_mzml(self, filepath, polarity=None, scan_range="all", peak_type="peaks", ms1_p=5e-6, msn_p=5e-6):
         p_d = {"positive": "+ p",
                "negative": "- p"}
-
         if polarity not in p_d.keys():
-            return False
-        reader = pymzml.run.Reader(self.filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
-
+            return
+        reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
         if scan_range == "all":
             scan_range = []
             for scan_number, spectrum in enumerate(reader):
@@ -117,7 +115,6 @@ class SpectrumLoader(object):
                         scan_range.append(scan_number)
                 except KeyError:
                     pass
-
         elif scan_range == "apex":
             tic_scans = []
             for scan_number, spectrum in enumerate(reader):
@@ -132,7 +129,7 @@ class SpectrumLoader(object):
         elif type(scan_range) == list:
             pass
 
-        reader = pymzml.run.Reader(self.filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
+        reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
 
         sample_spectrum = pymzml.spec.Spectrum(measuredPrecision=msn_p)
 
@@ -152,10 +149,5 @@ class SpectrumLoader(object):
         masses = np.array([x[0] for x in spectrum])
         intensities = np.array([x[1] for x in spectrum])
 
-        return Spectrum(identifier=self.identifier, masses=masses, intensities=intensities)
-
-    def from_excel(self, filepath):
-        pass
-
-    def from_csv(self, filepath, delimiter=","):
-        pass
+        self.masses = masses
+        self.intensities = intensities

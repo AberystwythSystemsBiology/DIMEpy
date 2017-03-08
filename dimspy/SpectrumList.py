@@ -62,7 +62,6 @@ class SpectrumList(object):
 
         self.spectrum_list = o.spectrum_list
         self.binned = o.binned
-        return self
 
     def to_excel(self, fp="/tmp/output.xlsx"):
         if self.binned == True:
