@@ -7,20 +7,11 @@ from scipy.sparse.linalg import spsolve
 class Spectrum(object):
     def __init__(self, identifier, masses=np.array([]), intensities=np.array([])):
         self.identifier = identifier
-        self.masses = masses
-        self.intensities = intensities
-
-    def set_identifier(self, identifier):
-        self.identifier = identifier
-
-    def set_masses(self, masses):
-        self.masses = masses
-
-    def set_intensities(self, intensities):
-        self.intensities = intensities
+        self.masses = np.array(masses)
+        self.intensities = np.array(intensities)
 
     def smooth(self, sigma=1):
-       self.set_intensities(gaussian_filter1d(self.intensities, sigma))
+       self.intensities  = gaussian_filter1d(self.intensities, sigma)
 
     def correct_baseline(self, lambda_=100, porder=1, max_iterations=15):
         def WhittakerSmooth(x, w, lambda_, differences=1):
@@ -59,8 +50,8 @@ class Spectrum(object):
                 bc_i.append(self.intensities[index])
                 bc_m.append(self.masses[index])
 
-        self.set_intensities(np.array(bc_i))
-        self.set_masses(np.array(bc_m))
+        self.intensities = np.array(bc_i)
+        self.masses = np.array(bc_m)
 
     def bin(self, bs=0.25, removena=True):
         bins = np.arange(round(min(self.masses)), round(max(self.masses)), step=bs)
@@ -74,21 +65,26 @@ class Spectrum(object):
                 if np.isnan(intensity) != True:
                     binned_masses.append(b_masses[index])
                     binned_intensities.append(b_intensities[index])
-
-        self.set_masses(np.array(binned_masses))
-        self.set_intensities(np.array(binned_intensities))
+        self.masses = np.array(binned_masses)
+        self.intensities = np.array(binned_intensities)
 
     def normalise(self, method="tic"):
         if method == "tic":
             sum_intensity = np.sum(self.intensities)
             median_intensity = np.median(self.intensities)
-            self.set_intensities(np.array([(x / sum_intensity) * median_intensity for x in self.intensities]))
+            self.intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
         else:
             pass
 
     def transform(self, method="log10"):
         if method == "log10":
-            self.set_intensities(np.log10(self.intensities))
+            self.intensities = np.log10(self.intensities)
+
+    def value_imputation(self):
+        intensities = self.intensities
+        intensities[np.isnan(intensities)] = (np.nanmin(intensities)/2)
+        self.intensities = intensities
+
 
     def pickle(self, fp):
         with open(fp, "wb") as output:
@@ -102,6 +98,20 @@ class Spectrum(object):
         self.intensities = o.intensities
 
     def from_mzml(self, filepath, polarity=None, scan_range="all", peak_type="peaks", ms1_p=5e-6, msn_p=5e-6):
+
+        def get_apex():
+            tic_scans = []
+            for scan_number, spectrum in enumerate(reader):
+                try:
+                    if p_d[polarity] in spectrum["filter string"]:
+                        tic_scans.append([spectrum["total ion current"], scan_number])
+                except KeyError:
+                    pass
+            tics = [x[0] for x in tic_scans]
+            mad = np.mean(np.absolute(tics - np.mean(tics))) * 3
+            scan_range = [x[1] for x in tic_scans if x[0] > mad]
+            return scan_range
+
         p_d = {"positive": "+ p",
                "negative": "- p"}
         if polarity not in p_d.keys():
@@ -116,16 +126,7 @@ class Spectrum(object):
                 except KeyError:
                     pass
         elif scan_range == "apex":
-            tic_scans = []
-            for scan_number, spectrum in enumerate(reader):
-                try:
-                    if p_d[polarity] in spectrum["filter string"]:
-                        tic_scans.append([spectrum["total ion current"], scan_number])
-                except KeyError:
-                    pass
-            tics = [x[0] for x in tic_scans]
-            mad = np.mean(np.absolute(tics - np.mean(tics))) * 3
-            scan_range = [x[1] for x in tic_scans if x[0] > mad]
+            scan_range = get_apex()
         elif type(scan_range) == list:
             pass
 

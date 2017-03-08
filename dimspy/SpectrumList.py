@@ -1,4 +1,5 @@
 import numpy as np, pandas as pd, pickle as pkl
+from sklearn.preprocessing import Imputer
 
 class SpectrumList(object):
     def __init__(self, spectrum_list=[], binned=False):
@@ -24,6 +25,8 @@ class SpectrumList(object):
 
         ad_f_m = [abs((x-mean_tic)/mean_ad) for x in total_ion_counts]
 
+        print ad_f_m
+
         outlier_spectrums = [s for i, s in enumerate(self.spectrum_list) if ad_f_m[i] > threshold]
 
         for spectrum in outlier_spectrums:
@@ -35,6 +38,34 @@ class SpectrumList(object):
         for spectrum in self.spectrum_list:
             spectrum.bin(bw, removena)
             self.binned = True
+
+    def value_imputation(self, method="knn", threshold=0.5):
+        sample_threshold = len(self.to_list()) * threshold
+        if self.binned == False:
+            return
+        else:
+            output = []
+            for s in self.spectrum_list:
+                df = pd.DataFrame(s.intensities).T
+                df.columns = s.masses
+                df.index = [str(s.identifier)]
+                output.append(df)
+            df = pd.concat(output, axis=0)
+            df.dropna(axis=1, thresh=sample_threshold, inplace=True)
+            if method == "knn":
+                imp = Imputer(axis=0)
+                imputated = imp.fit_transform(df)
+                df = pd.DataFrame(imputated, columns=df.columns, index=df.index)
+            elif method == "basic":
+                df.dropna(axis=1, thresh=threshold, inplace=True)
+                df.fillna(value=(np.nanargmin(df.values) / 2), inplace=True)
+
+
+            for identifier, values in df.iterrows():
+                masses = np.array(list(values.index))
+                intensities = values.values
+                [(x.masses == masses, x.intensities == intensities) for x in self.spectrum_list if x.identifier == identifier]
+
 
     def smooth(self, sigma=1):
         for spectrum in self.spectrum_list:
