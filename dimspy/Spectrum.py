@@ -99,7 +99,6 @@ class Spectrum(object):
         self.intensities = o.intensities
 
     def from_mzml(self, filepath, polarity=None, scan_range="all", peak_type="peaks", ms1_p=5e-6, msn_p=5e-6):
-
         def get_apex():
             tic_scans = []
             for scan_number, spectrum in enumerate(reader):
@@ -139,13 +138,12 @@ class Spectrum(object):
             if scan_number in scan_range:
                 sample_spectrum += scan_spectrum
 
-        if peak_type == "peaks":
-            spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.peaks]
-        elif peak_type == "centroided":
+        if peak_type == "centroided":
             spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.centroidedPeaks]
         elif peak_type == "reprofiled":
             spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.reprofiledPeaks]
-
+        else:
+            spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.peaks]
         spectrum = sorted(spectrum, key=operator.itemgetter(0))
 
         masses = np.array([x[0] for x in spectrum])

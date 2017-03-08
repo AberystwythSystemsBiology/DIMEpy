@@ -25,8 +25,6 @@ class SpectrumList(object):
 
         ad_f_m = [abs((x-mean_tic)/mean_ad) for x in total_ion_counts]
 
-        print ad_f_m
-
         outlier_spectrums = [s for i, s in enumerate(self.spectrum_list) if ad_f_m[i] > threshold]
 
         for spectrum in outlier_spectrums:
@@ -59,7 +57,6 @@ class SpectrumList(object):
             elif method == "basic":
                 df.dropna(axis=1, thresh=threshold, inplace=True)
                 df.fillna(value=(np.nanargmin(df.values) / 2), inplace=True)
-
 
             for identifier, values in df.iterrows():
                 masses = np.array(list(values.index))
