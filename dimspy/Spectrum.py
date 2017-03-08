@@ -5,10 +5,11 @@ from scipy.sparse.linalg import spsolve
 
 
 class Spectrum(object):
-    def __init__(self, identifier, masses=np.array([]), intensities=np.array([])):
+    def __init__(self, identifier, masses=np.array([]), intensities=np.array([]), label=None):
         self.identifier = identifier
         self.masses = np.array(masses)
         self.intensities = np.array(intensities)
+        self.label = label
 
     def smooth(self, sigma=1):
        self.intensities  = gaussian_filter1d(self.intensities, sigma)
