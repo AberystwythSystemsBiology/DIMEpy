@@ -56,6 +56,14 @@ class SpectrumList(object):
         with open(fp, "wb") as output:
             pkl.dump(self, output, pkl.HIGHEST_PROTOCOL)
 
+    def from_pickle(self, fp="/tmp/pickled.pkl"):
+        with open(fp, "rb") as input:
+            o = pkl.load(input)
+
+        self.spectrum_list = o.spectrum_list
+        self.binned = o.binned
+        return self
+
     def to_excel(self, fp="/tmp/output.xlsx"):
         if self.binned == True:
             output = []

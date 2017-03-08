@@ -90,10 +90,10 @@ class Spectrum(object):
         if method == "log10":
             self.set_intensities(np.log10(self.intensities))
 
-    def to_excel(self):
+    def pickle(self):
         pass
 
-    def to_csv(self):
+    def from_pickle(self):
         pass
 
 class SpectrumLoader(object):
