@@ -1,7 +1,5 @@
 from dimspy import Spectrum, SpectrumList, SpectrumListProcessor
 
-import matplotlib.pyplot as plt
-
 file_path = "/home/keo7/Desktop/experiments/denisa_saliva/data/mzMLs/"
 scan_range = "apex"
 type = "peaks"
@@ -24,8 +22,3 @@ sl_processor.transform()
 
 processed_spec_list = sl_processor.to_spectrumlist()
 
-plt.figure()
-for spectrum in processed_spec_list.to_list():
-    plt.plot(spectrum.masses, spectrum.intensities, label=spectrum.id)
-plt.legend()
-plt.show()
