@@ -1,4 +1,4 @@
-import numpy as np, pandas as pd, pickle as pkl, collections
+import pandas as pd, pickle as pkl, collections
 
 class SpectrumList(object):
     def __init__(self, spectrum_list=[], processing_dict={}):
@@ -35,3 +35,9 @@ class SpectrumList(object):
             output.append([spectrum.id] + spectrum.masses.tolist())
             output.append([" "] + spectrum.intensities.tolist())
         pd.DataFrame(output).T.dropna().to_csv(fp, delimiter=delim, header=False, index=False)
+
+
+
+    def from_csv(self):
+        # TODO
+        pass

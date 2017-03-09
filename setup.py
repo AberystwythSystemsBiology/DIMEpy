@@ -15,5 +15,20 @@ setup(
     description="",
     long_description="",
     packages=["dimspy"],
-    include_package_data=True
+    include_package_data=True,
+    package_data={
+        '': ['*.txt', '*.rst', '*.md'],
+    },
+    exclude_package_data={'': ['README.txt']},
+
+    install_requires=[
+        'numpy>=1.11.3',
+        'scipy>=0.18.1',
+        'pymzml>=0.7.7',
+        'pandas>=0.18.1',
+        "scikit-learn>=0.18.1"
+    ],
+
+    keywords='bioinformatics metabolomics research analysis science',
+
 )
