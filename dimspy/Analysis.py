@@ -1,5 +1,6 @@
 import pandas as pd, matplotlib.pyplot as plt, numpy as np, utils
 from Results import Result
+from sklearn.metrics import roc_auc_score, accuracy_score
 
 class DataAnalysisObject(object):
     def __init__(self, SpectrumList):
@@ -95,21 +96,26 @@ class DataAnalysisObject(object):
 
         df = self._append_class(class_df)
 
-
-
-        def _run_lda(data, labels, train, test):
+        def _run_lda(data, labels, train=None, test=None):
             clf = LinearDiscriminantAnalysis()
-            clf.fit(data[train], data[test])
-            prediction = clf.predict(data[test])
-            score = clf.decision_function(data[test])
+            if train is None:
+                clf.fit(data, labels)
+                prediction = clf.predict(data)
+                score = clf.decision_function(data[test])
+            else:
+                clf.fit(data[train], labels[train])
+                exit(0)
+                prediction = clf.predict(data[test])
+                score = clf.decision_function(data[test])
 
             return prediction, score
 
         def _variables():
-            y_true = []
-            y_predict = []
-            y_score = []
+            result = []
             for variable in df.columns[1:]:
+                y_true = []
+                y_predict = []
+                y_score = []
                 data = df[variable].values
                 labels = df[df.columns[0]].values
                 if cv != None:
@@ -119,6 +125,18 @@ class DataAnalysisObject(object):
                         y_true.extend(labels[test])
                         y_predict.extend(p)
                         y_score.extend(s)
+                else:
+                    p, s = _run_lda(data, labels)
+                    y_true.extend(labels)
+                    y_predict.extend(p)
+                    y_score.extend(s)
+                auc = roc_auc_score(y_true, y_score)
+                accuracy = accuracy_score(y_true, y_predict)
+                result.append([variable, accuracy, auc])
+                break
+            print result
+            exit(0)
+
         def _all():
             data = df.values
             labels = df[df.columns[0]].values
@@ -126,3 +144,5 @@ class DataAnalysisObject(object):
 
         if type == "variable":
             _variables()
+        elif type == "all":
+            _all()

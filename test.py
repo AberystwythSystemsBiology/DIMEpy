@@ -31,12 +31,11 @@ if __name__ == "__main__":
         "t-test": {
             "p-value": "< 0.05"
         }
-
     }
 
     rl.variable_limiter(da, limit_values)
 
-    da.lda(mtd, cv="loo")
+    da.lda(mtd, type="variable", cv="loo")
 
 
     #da.pca(mtd, show=True)
