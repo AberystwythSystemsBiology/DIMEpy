@@ -1,4 +1,4 @@
-import pandas as pd, matplotlib.pyplot as plt, numpy as np, utils
+import pandas as pd, numpy as np, dimspy_utils
 from Results import Result
 from sklearn.metrics import roc_auc_score, accuracy_score
 
@@ -17,8 +17,9 @@ class DataAnalysisObject(object):
     def _append_class(self, class_df):
         return pd.concat([class_df, self.data_frame], axis=1).dropna()
 
-    def pca(self, class_df=None, fp=None, show=False):
+    def principle_components_analysis(self, class_df=None, fp=None, show=False):
         from sklearn.decomposition import PCA
+        import matplotlib.pyplot as plt
 
         def _apply_pca():
             pca = PCA(whiten=True)
@@ -104,22 +105,21 @@ class DataAnalysisObject(object):
                 score = clf.decision_function(data[test])
             else:
                 clf.fit(data[train], labels[train])
-                exit(0)
                 prediction = clf.predict(data[test])
                 score = clf.decision_function(data[test])
-
             return prediction, score
 
         def _variables():
-            result = []
+            results = []
+            data, labels = dimspy_utils._prep_data(df, labels=True, binarise=True)
+
             for variable in df.columns[1:]:
                 y_true = []
                 y_predict = []
                 y_score = []
-                data = df[variable].values
-                labels = df[df.columns[0]].values
+                data = df[variable].values.reshape(len(labels), 1)
                 if cv != None:
-                    c_validator = utils._cross_validation(data, cv)
+                    c_validator = dimspy_utils._cross_validation(data, cv)
                     for train, test in c_validator:
                         p, s = _run_lda(data, labels, train, test)
                         y_true.extend(labels[test])
@@ -130,19 +130,18 @@ class DataAnalysisObject(object):
                     y_true.extend(labels)
                     y_predict.extend(p)
                     y_score.extend(s)
+
                 auc = roc_auc_score(y_true, y_score)
                 accuracy = accuracy_score(y_true, y_predict)
-                result.append([variable, accuracy, auc])
-                break
-            print result
-            exit(0)
+                results.append([variable, auc, accuracy])
+            results = pd.DataFrame([x[1:] for x in results], index=[x[0] for x in results], columns=["AUC", "Accuracy"])
+            return Result(results, "LDA (Variables)")
 
         def _all():
-            data = df.values
-            labels = df[df.columns[0]].values
-
+            data, labels = dimspy_utils._prep_data(df, binarise=True)
 
         if type == "variable":
-            _variables()
+            result = _variables()
         elif type == "all":
-            _all()
+            result = _all()
+        return result

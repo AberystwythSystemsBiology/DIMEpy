@@ -23,6 +23,9 @@ if __name__ == "__main__":
 
     da = DataAnalysisObject(sl)
 
+    #da.principle_components_analysis(mtd, show=True)
+
+
     rl = ResultsList()
 
     rl.append(da.t_test(mtd))
@@ -35,7 +38,16 @@ if __name__ == "__main__":
 
     rl.variable_limiter(da, limit_values)
 
-    da.lda(mtd, type="variable", cv="loo")
+    rl.append(da.lda(mtd, cv="loo"))
 
+    limit_values = {
+        "LDA (Variables)" : {
+            "AUC" : "> 0.7"
+        }
+    }
 
-    #da.pca(mtd, show=True)
+    rl.variable_limiter(da, limit_values)
+
+    print da.data_frame
+
+    #da.principle_components_analysis(mtd, show=True)
