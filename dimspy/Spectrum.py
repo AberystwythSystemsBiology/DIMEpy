@@ -37,7 +37,7 @@ class Spectrum(object):
         from scipy.sparse import csc_matrix, eye, diags
         from scipy.sparse.linalg import spsolve
 
-        def WhittakerSmooth(x, w, lambda_, differences=1):
+        def _WhittakerSmooth(x, w, lambda_, differences=1):
             X = np.matrix(x)
             m = X.size
             i = np.arange(0, m)
@@ -49,11 +49,11 @@ class Spectrum(object):
             background = spsolve(A, B)
             return np.array(background)
 
-        def AirPLS():
+        def _AirPLS():
             m = self.intensities.shape[0]
             w = np.ones(m)
             for i in range(1, max_iterations + 1):
-                z = WhittakerSmooth(self.intensities, w, lambda_, porder)
+                z = _WhittakerSmooth(self.intensities, w, lambda_, porder)
                 d = self.intensities - z
                 dssn = np.abs(d[d < 0].sum())
                 if (dssn < 0.001 * (abs(self.intensities)).sum() or i == max_iterations):
@@ -64,7 +64,7 @@ class Spectrum(object):
                 w[-1] = w[0]
             return z
 
-        baseline = AirPLS()
+        baseline = _AirPLS()
 
         bc_i = []
         bc_m = []
@@ -90,7 +90,7 @@ class Spectrum(object):
             self.intensities = np.log10(self.intensities)
 
     def get_peaks(self, delta=3):
-        def detect_peaks():
+        def _detect_peaks():
             # TODO: Legacy code - badly needs a rewrite.
             maxtab = []
             mintab = []
@@ -122,13 +122,13 @@ class Spectrum(object):
 
             return np.array(maxtab)
 
-        peaks = detect_peaks()
+        peaks = _detect_peaks()
         self.masses = self.masses[peaks]
         self.intensities = self.intensities[peaks]
 
     def from_mzml(self, filepath, polarity=None, scan_range="all", peak_type="peaks", ms1_p=5e-6, msn_p=5e-6):
 
-        def get_polarity():
+        def _get_polarity():
             reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p,
                                        extraAccessions=[('MS:1000129', ['value']), ('MS:1000130', ['value'])])
 
@@ -139,7 +139,7 @@ class Spectrum(object):
                     scans_of_interest.append(scan_number)
             return scans_of_interest
 
-        def return_apex():
+        def _return_apex():
             reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
             tic_scans = []
             for scan_number, scan in enumerate(reader):
@@ -150,7 +150,7 @@ class Spectrum(object):
             scan_range = [x[1] for x in tic_scans if x[0] > mad]
             return scan_range
 
-        def create_spectrum():
+        def _create_spectrum():
             reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
             sample_spectrum = pymzml.spec.Spectrum(measuredPrecision=msn_p)
             for scan_number, scan in enumerate(reader):
@@ -158,8 +158,7 @@ class Spectrum(object):
                     sample_spectrum += scan
             return sample_spectrum
 
-
-        def pymzl_spectrum_to_spectrum():
+        def _pymzl_spectrum_to_spectrum():
             if peak_type == "centroided":
                 spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.centroidedPeaks]
             elif peak_type == "reprofiled":
@@ -174,9 +173,9 @@ class Spectrum(object):
             self.masses = masses
             self.intensities = intensities
 
-        scans_of_interest = get_polarity()
+        scans_of_interest = _get_polarity()
         if scan_range == "apex":
-            scans_of_interest = return_apex()
+            scans_of_interest = _return_apex()
 
-        sample_spectrum = create_spectrum()
-        pymzl_spectrum_to_spectrum()
+        sample_spectrum = _create_spectrum()
+        _pymzl_spectrum_to_spectrum()

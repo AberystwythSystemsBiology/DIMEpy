@@ -69,7 +69,7 @@ class SpectrumListProcessor(object):
     def binning(self, bin_size=0.25):
         shared_masses = []
 
-        def bin(spectrum):
+        def _bin(spectrum):
             bins = np.arange(round(min(spectrum.masses)), round(max(spectrum.masses)), step=bin_size)
             b_intensities, b_masses, b_num = stats.binned_statistic(spectrum.masses, spectrum.intensities, bins=bins)
             spectrum.masses = b_masses[:-1]
@@ -77,7 +77,7 @@ class SpectrumListProcessor(object):
             return b_masses
 
         for spectrum in self.spectrum_list.to_list():
-            binned_masses = bin(spectrum)
+            binned_masses = _bin(spectrum)
             shared_masses.append(binned_masses.tolist())
 
         self.binned_intensities = np.array(sum(shared_masses, []))
@@ -87,11 +87,8 @@ class SpectrumListProcessor(object):
         }
 
     def value_imputation(self, method="knn", threshold=0.5):
-        if "binning" not in self.processor_dict.keys():
-            # Need to write a per-spectrum value_imputator
-            return
 
-        def remove_bins_by_threshold():
+        def _remove_bins_by_threshold():
             sample_threshold = len(self.spectrum_list.to_list()) * threshold
             output = []
             for spectrum in self.spectrum_list.to_list():
@@ -103,7 +100,7 @@ class SpectrumListProcessor(object):
             df.dropna(axis=1, thresh=sample_threshold, inplace=True)
             return df
 
-        def value_imputation(df):
+        def _value_imputation(df):
             if method == "knn":
                 from sklearn.preprocessing import Imputer
                 imp = Imputer(axis=0)
@@ -113,16 +110,19 @@ class SpectrumListProcessor(object):
                 df.fillna(value=(np.nanargmin(df.values) / 2), inplace=True)
             return df
 
-        def back_to_spectrum(df):
+        def _back_to_spectrum(df):
             for id, values in df.iterrows():
                 masses = np.array(list(values.index))
                 intensities = values.values
-                [(x.masses == masses, x.intensities == intensities) for x in self.spectrum_list.to_list() if x.id == id]
+                spectrum = [x for x in self.spectrum_list.to_list() if x.id == id][0]
+                spectrum.masses = masses
+                spectrum.intensities = intensities
 
-        df = remove_bins_by_threshold()
-        df = value_imputation(df)
 
-        back_to_spectrum(df)
+        df = _remove_bins_by_threshold()
+        df = _value_imputation(df)
+
+        _back_to_spectrum(df)
 
         self.binned_intensities = np.array(df.columns)
 

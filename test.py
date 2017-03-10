@@ -8,17 +8,16 @@ spec_list = SpectrumList()
 
 spec = Spectrum(id="A002")
 spec.from_mzml(file_path+"0001-A002-160824-a.mzML", "negative", scan_range, type)
-
 spec_list.append(spec)
 
+spec2 = Spectrum(id="Ctrl01")
+spec2.from_mzml(file_path+"Ctrl01.mzML", "negative", scan_range, type)
+spec_list.append(spec2)
+
 sl_processor = SpectrumListProcessor(spec_list)
-sl_processor.outlier_detection()
-sl_processor.smooth()
-sl_processor.correct_baseline()
 sl_processor.binning(0.125)
 sl_processor.value_imputation(threshold=0.5)
-sl_processor.normalise()
-sl_processor.transform()
 
 processed_spec_list = sl_processor.to_spectrumlist()
 
+processed_spec_list.to_excel()

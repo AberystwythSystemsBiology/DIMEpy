@@ -1,10 +1,9 @@
-import pandas as pd, pickle as pkl, collections
+import pandas as pd, pickle as pkl, collections, csv, numpy as np
 
 class SpectrumList(object):
-    def __init__(self, spectrum_list=[], processing_dict={}):
+    def __init__(self, spectrum_list=[], processing_dict=collections.OrderedDict()):
         self.spectrum_list = spectrum_list
-
-    processor_dict = collections.OrderedDict()
+        self.processor_dict = processing_dict
 
     def __repr__(self):
         return self.spectrum_list
@@ -34,10 +33,29 @@ class SpectrumList(object):
         for spectrum in self.spectrum_list:
             output.append([spectrum.id] + spectrum.masses.tolist())
             output.append([" "] + spectrum.intensities.tolist())
-        pd.DataFrame(output).T.dropna().to_csv(fp, delimiter=delim, header=False, index=False)
-
-
+        output = pd.DataFrame(output).T.replace(np.nan, "", regex=True).values
+        with open(fp, "wb") as out_file:
+            writer = csv.writer(out_file, delimiter=delim)
+            for row in output:
+                writer.writerow(row)
+            out_file.close()
 
     def from_csv(self):
         # TODO
         pass
+
+
+    def to_excel(self, fp="/tmp/output.xlsx"):
+        print self.processor_dict.keys()
+        if "binning" in self.processor_dict.keys():
+            output = []
+            for spectrum in self.spectrum_list:
+                df = pd.DataFrame(spectrum.intensities).T
+                df.columns = spectrum.masses
+                df.index = [spectrum.id]
+                output.append(df)
+            output = pd.concat(output, axis=0)
+            output.to_excel(fp)
+        else:
+            return
+
