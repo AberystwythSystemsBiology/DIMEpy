@@ -3,7 +3,7 @@ import pandas as pd, pickle as pkl, collections, csv, numpy as np
 class SpectrumList(object):
     def __init__(self, spectrum_list=[], processing_dict=collections.OrderedDict()):
         self.spectrum_list = spectrum_list
-        self.processor_dict = processing_dict
+        self.processing_dict = processing_dict
 
     def __repr__(self):
         return self.spectrum_list
@@ -30,7 +30,11 @@ class SpectrumList(object):
             o = pkl.load(input)
 
         self.spectrum_list = o.spectrum_list
-        self.processing_dict = o.processing_dict
+        try:
+            # Edit this to fit the actual init
+            self.processing_dict = o.processor_dict
+        except:
+            self.processing_dict = None
 
     def to_csv(self, fp="/tmp/output.csv", delim=","):
         output = []
