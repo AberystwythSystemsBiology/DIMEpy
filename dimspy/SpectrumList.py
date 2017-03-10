@@ -12,7 +12,11 @@ class SpectrumList(object):
         return list(self.spectrum_list)
 
     def append(self, spectrum):
-        self.spectrum_list.append(spectrum)
+        if spectrum.id not in [x.id for x in self.spectrum_list]:
+            self.spectrum_list.append(spectrum)
+        else:
+            # TODO: THROW AN EXCEPTION
+            return
 
     def remove(self, spectrum):
         self.spectrum_list.remove(spectrum)
@@ -44,9 +48,7 @@ class SpectrumList(object):
         # TODO
         pass
 
-
     def to_excel(self, fp="/tmp/output.xlsx"):
-        print self.processor_dict.keys()
         if "binning" in self.processor_dict.keys():
             output = []
             for spectrum in self.spectrum_list:
