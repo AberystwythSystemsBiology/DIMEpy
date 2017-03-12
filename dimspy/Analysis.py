@@ -102,7 +102,7 @@ class DataAnalysisObject(object):
             if train is None:
                 clf.fit(data, labels)
                 prediction = clf.predict(data)
-                score = clf.decision_function(data[test])
+                score = clf.decision_function(data)
             else:
                 clf.fit(data[train], labels[train])
                 prediction = clf.predict(data[test])
@@ -138,7 +138,32 @@ class DataAnalysisObject(object):
             return Result(results, "LDA (Variables)")
 
         def _all():
-            data, labels = dimspy_utils._prep_data(df, binarise=True)
+            y_true = []
+            y_predict = []
+            y_score = []
+            data, labels = dimspy_utils._prep_data(df, labels=True, binarise=True)
+            if cv != None:
+                c_validator = dimspy_utils._cross_validation(data, cv)
+                for train, test in c_validator:
+                    p, s = _run_lda(data, labels, train, test)
+                    y_true.extend(labels[test])
+                    y_predict.extend(p)
+                    y_score.extend(s)
+            else:
+                p, s = _run_lda(data, labels)
+                y_true =[x[0] for x in labels.tolist()]
+                y_predict = p
+                y_score = s
+            auc = roc_auc_score(y_true, y_score)
+            accuracy = accuracy_score(y_true, y_predict)
+            result = pd.DataFrame([auc, accuracy]).T
+            result.columns = ["AUC", "Accuracy"]
+            result = Result(result, "LDA (All)")
+            result.y_true = y_true
+            result.y_pred = y_predict
+            result.y_scores = y_score
+            return result
+
 
         if type == "variable":
             result = _variables()

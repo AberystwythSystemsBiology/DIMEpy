@@ -2,6 +2,8 @@ from dimspy import SpectrumList
 from dimspy.Analysis import DataAnalysisObject
 from dimspy.Results import ResultsList
 
+import dimspy.Graphics as grfx
+
 import pandas as pd
 
 def get_metadata_dict(fp):
@@ -48,6 +50,8 @@ if __name__ == "__main__":
 
     rl.variable_limiter(da, limit_values)
 
-    print da.data_frame
+    r = da.lda(mtd, cv="loo", type="all")
+
+    grfx.roc(r, True)
 
     #da.principle_components_analysis(mtd, show=True)

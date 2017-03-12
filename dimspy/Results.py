@@ -1,6 +1,10 @@
 import collections
 
 class Result(object):
+    y_scores = []
+    y_pred = []
+    y_true = []
+
     def __init__(self, result_frame, type):
         self.result_frame = result_frame
         self.type = type
