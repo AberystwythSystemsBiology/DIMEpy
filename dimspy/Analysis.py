@@ -1,6 +1,6 @@
 import pandas as pd, numpy as np, dimspy_utils
 from Results import Result
-from sklearn.metrics import roc_auc_score, accuracy_score
+from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score
 
 class DataAnalysisObject(object):
     def __init__(self, SpectrumList):
@@ -13,9 +13,12 @@ class DataAnalysisObject(object):
         data_frame = pd.concat(data_frame, axis=0)
         self.data_frame = data_frame
 
-
     def _append_class(self, class_df):
         return pd.concat([class_df, self.data_frame], axis=1).dropna()
+
+    def linear_regression(self, class_df, cv=None):
+        from sklearn.linear_model import LinearRegression
+        pass
 
     def principle_components_analysis(self, class_df=None, fp=None, show=False):
         from sklearn.decomposition import PCA
@@ -87,10 +90,81 @@ class DataAnalysisObject(object):
 
         return Result(results, "t-test")
 
+    def anova(self, class_df, cv = None):
+        from sklearn.feature_selection import f_classif
 
-    def anova(self, class_df):
-        pass
+        df = self._append_class(class_df)
+        variables = df.columns.values[1:]
+        data = df[df.columns[1:]].values
+        labels = df[df.columns[0]].values
 
+        f_values, p_values = f_classif(data, labels)
+
+        results = []
+
+        for index, f_value in enumerate(f_values):
+            results.append([variables[index], p_values[index], f_value])
+
+        results = pd.DataFrame([x[1:] for x in results],
+                               index = [x[0] for x in results],
+                               columns=["p-value", "f-statistic"])
+
+        return Result(results, "anova")
+
+    def svm_classifier(self, class_df, type="variable", cv=None):
+        from sklearn.svm import SVC
+
+        df = self._append_class(class_df)
+
+        def _run_svc(data, labels, train=None, test=None):
+            if len(set(labels)) > 2:
+                from sklearn.multiclass import OneVsRestClassifier
+                clf = OneVsRestClassifier(SVC())
+            else:
+                clf = SVC()
+
+            if train is None:
+                clf.fit(data, labels)
+                prediction = clf.predict(data)
+                score = clf.decision_function(data)
+            else:
+                clf.fit(data[train], labels[train])
+                prediction = clf.predict(data[test])
+                score = clf.decision_function(data[test])
+            return prediction, score
+
+        def _all():
+            y_true = []
+            y_predict = []
+            y_score = []
+            data, labels = dimspy_utils._prep_data(df, labels=True, binarise=False)
+
+            if cv != None:
+                c_validator = dimspy_utils._cross_validation(data, cv)
+                for train, test in c_validator:
+                    p, s = _run_svc(data, labels, train, test)
+                    y_true.extend(labels[test])
+                    y_predict.extend(p)
+                    y_score.extend(s)
+            else:
+                p, s = _run_svc(data, labels)
+                y_true =[x[0] for x in labels.tolist()]
+                y_predict = p
+                y_score = s
+
+            accuracy = accuracy_score(y_true, y_predict)
+            result = pd.DataFrame([accuracy]).T
+            result.columns = ["Accuracy"]
+            result = Result(result, "SVM (All)")
+            result.y_true = y_true
+            result.y_pred = y_predict
+            result.y_scores = y_score
+            return result
+        if type == "variable":
+            result = None
+        elif type == "all":
+            result = _all()
+        return result
 
     def lda(self, class_df, type="variable", cv=None):
         from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
@@ -163,8 +237,6 @@ class DataAnalysisObject(object):
             result.y_pred = y_predict
             result.y_scores = y_score
             return result
-
-
         if type == "variable":
             result = _variables()
         elif type == "all":

@@ -66,7 +66,7 @@ class SpectrumListProcessor(object):
             "method" : method
         }
 
-    def binning(self, bin_size=0.25):
+    def binning(self, bin_size=0.05):
         shared_masses = []
 
         def _bin(spectrum):
