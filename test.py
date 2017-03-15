@@ -26,6 +26,8 @@ if __name__ == "__main__":
     da = DataAnalysisObject(sl)
     rl = ResultsList()
 
+    da.linear_regression(mtd)
+
     exit(0)
 
     da.principle_components_analysis(mtd, show=True)

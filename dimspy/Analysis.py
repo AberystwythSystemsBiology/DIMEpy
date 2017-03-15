@@ -16,8 +16,20 @@ class DataAnalysisObject(object):
     def _append_class(self, class_df):
         return pd.concat([class_df, self.data_frame], axis=1).dropna()
 
-    def linear_regression(self, class_df, cv=None):
+    def linear_regression(self, class_df, type="variable"):
         from sklearn.linear_model import LinearRegression
+
+        df = self._append_class(class_df)
+
+        if type == "variable":
+            for variable in df.columns.values[1:]:
+                clf = LinearRegression()
+                data = df[variable].values
+                labels = df[df.columns[0]].values
+                clf.fit(data, labels)
+                print data
+                print clf.predict(labels)
+
         pass
 
     def principle_components_analysis(self, class_df=None, fp=None, show=False):
