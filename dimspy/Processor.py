@@ -66,21 +66,36 @@ class SpectrumListProcessor(object):
             "method" : method
         }
 
-    def binning(self, bin_size=0.05):
+    def center(self):
+
+        masses = []
+        for spectrum in self.spectrum_list.to_list():
+            masses.append(spectrum.masses.tolist())
+
+        self.binned_intensities = np.array(sum(masses, []))
+        self.processor_dict["centering"] = {
+            "total number of bins" : self.binned_intensities.size
+        }
+
+    def binning(self, bin_size=0.05, statistic="mean"):
         shared_masses = []
 
         def _bin(spectrum):
             bins = np.arange(round(min(spectrum.masses)), round(max(spectrum.masses)), step=bin_size)
-            b_intensities, b_masses, b_num = stats.binned_statistic(spectrum.masses, spectrum.intensities, bins=bins)
+            b_intensities, b_masses, b_num = stats.binned_statistic(spectrum.masses, spectrum.intensities, bins=bins,
+                                                                    statistic=statistic)
             spectrum.masses = b_masses[:-1]
             spectrum.intensities = b_intensities
             return b_masses
+
 
         for spectrum in self.spectrum_list.to_list():
             binned_masses = _bin(spectrum)
             shared_masses.append(binned_masses.tolist())
 
-        self.binned_intensities = np.array(sum(shared_masses, []))
+
+
+        self.binned_intensities = np.array(sum(sorted(shared_masses), []))
         self.processor_dict["binning"] = {
             "bin size" : bin_size,
             "total number of bins" : self.binned_intensities.size
@@ -106,6 +121,7 @@ class SpectrumListProcessor(object):
                 imp = Imputer(axis=0)
                 imputated = imp.fit_transform(df)
                 df = pd.DataFrame(imputated, columns=df.columns, index=df.index)
+                print df
             elif method == "basic":
                 df.fillna(value=(np.nanargmin(df.values) / 2), inplace=True)
             return df

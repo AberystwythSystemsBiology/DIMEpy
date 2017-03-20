@@ -123,6 +123,10 @@ class DataAnalysisObject(object):
 
         return Result(results, "anova")
 
+    def correlation_analysis(self, method="pearson"):
+        correlations = abs(self.data_frame.corr(method=method) - 1)
+        return correlations
+
     def svm_classifier(self, class_df, type="variable", cv=None):
         from sklearn.svm import SVC
 

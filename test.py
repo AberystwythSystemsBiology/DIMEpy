@@ -1,83 +1,25 @@
-from dimspy import SpectrumList
-from dimspy.Analysis import DataAnalysisObject
-from dimspy.Results import ResultsList
+from dimspy import Spectrum, SpectrumList, SpectrumListProcessor, Analysis
 
-import dimspy.Graphics as grfx
+spectrum_list = SpectrumList()
 
-import pandas as pd
-
-def get_metadata_dict(fp):
-    return pd.read_excel(fp, index_col=0)["FEV1 %  Pred"].dropna()
+spectrum = Spectrum(id="spectrum_one",
+                    masses=[10.0, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7, 10.8, 10.9, 11.0],
+                    intensities=[30, 10, 15, 10, 15, 20, 25, 10, 5, 10, 100])
 
 
-def load_spectrum_list(fp):
-    sl = SpectrumList()
-    sl.from_pickle(fp)
-    return sl
+spectrum_list.append(spectrum)
 
-if __name__ == "__main__":
+spectrum_two = Spectrum(id="spectrum_two",
+                        intensities=[9, 10, 13, 14, 20, 100, 23, 10, 50, 90, 10, 20, 30],
+                        masses=[9, 9.6, 9.7, 9.8, 9.9, 10.0, 10.1, 10.2, 10.3, 10.4, 10.5, 10.6, 10.7])
 
-    mtd = get_metadata_dict("/home/keo7/Desktop/experiments/denisa_saliva/data/Metadata.xlsx")
+spectrum_list.append(spectrum_two)
+Analysis.DataAnalysisObject
+spectrum_list_processor = SpectrumListProcessor(spectrum_list)
 
-    #mtd = mtd[mtd.isin(["HC", "COPD", "LC"])]
+spectrum_list_processor.binning(0.15, statistic="median")
+spectrum_list_processor.value_imputation(method="basic", threshold=0.5)
 
-    sl = load_spectrum_list("/home/keo7/Desktop/experiments/denisa_saliva/data/DIMSpy/positive/processed.pkl")
+spectrum_list = spectrum_list_processor.to_spectrumlist()
 
-    da = DataAnalysisObject(sl)
-    rl = ResultsList()
-
-    da.linear_regression(mtd)
-
-    exit(0)
-
-    da.principle_components_analysis(mtd, show=True)
-
-
-
-    rl.append(da.anova(mtd))
-
-    limit_values = {
-        "anova": {
-            "p-value": "< 0.05"
-        }
-    }
-
-    rl.variable_limiter(da, limit_values)
-
-    exit(0)
-
-    da.principle_components_analysis(mtd, show=True)
-
-    exit(0)
-
-
-    rl.append(da.t_test(mtd))
-
-    limit_values = {
-        "t-test": {
-            "p-value": "< 0.05"
-        }
-    }
-
-    rl.variable_limiter(da, limit_values)
-
-
-    grfx.box_plots(da, mtd, "./test.pdf")
-
-    exit(0)
-    rl.append(da.lda(mtd, cv="loo"))
-
-    limit_values = {
-        "LDA (Variables)" : {
-            "AUC" : "> 0.7"
-        }
-    }
-
-    rl.variable_limiter(da, limit_values)
-
-
-    r = da.lda(mtd, cv="loo", type="all")
-
-    grfx.roc(r, True)
-
-    da.principle_components_analysis(mtd, show=True)
+spectrum_list.to_excel("/home/keo7/Desktop/test.xlsx")

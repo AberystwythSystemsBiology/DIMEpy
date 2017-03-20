@@ -53,7 +53,7 @@ class SpectrumList(object):
         pass
 
     def to_excel(self, fp="/tmp/output.xlsx"):
-        if "binning" in self.processor_dict.keys():
+        if "binning" or "center" in self.processor_dict.keys():
             output = []
             for spectrum in self.spectrum_list:
                 df = pd.DataFrame(spectrum.intensities).T

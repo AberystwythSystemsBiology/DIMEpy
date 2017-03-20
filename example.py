@@ -29,6 +29,8 @@ sl.add(s1)
 # Returning Spectrum objects as a list
 print sl.to_list()
 
+
+
 # Smoothing over all Spectrum objects in the SpectrumList
 sl.smooth()
 '''

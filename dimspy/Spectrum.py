@@ -132,7 +132,7 @@ class Spectrum(object):
             reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p,
                                        extraAccessions=[('MS:1000129', ['value']), ('MS:1000130', ['value'])])
 
-            polarity_dict = {"negative" : "MS:1000130", "positive" : "MS:1000129"}
+            polarity_dict = {"positive" : "MS:1000130", "negative" : "MS:1000129"}
             scans_of_interest = []
             for scan_number, scan in enumerate(reader):
                 if scan.get(polarity_dict[polarity]) != None:
