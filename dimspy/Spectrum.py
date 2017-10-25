@@ -1,8 +1,8 @@
 import numpy as np, operator, pymzml, pickle as pkl, pandas as pd
 
 class Spectrum(object):
-
-    def __init__(self, id, masses=np.array([]), intensities=np.array([])):
+    def __init__(self, file_path, id, masses=np.array([]), intensities=np.array([])):
+        self.file_path = file_path
         self.id = id
         self.masses = np.array(masses)
         self.intensities = np.array(intensities)
@@ -14,6 +14,7 @@ class Spectrum(object):
     def from_pickle(self, fp):
         with open(fp, "rb") as infile:
             o = pkl.load(infile)
+        self.file_path = fp
         self.id = o.id
         self.masses = o.masses
         self.intensities = o.intensities
@@ -25,6 +26,7 @@ class Spectrum(object):
         pd.DataFrame(output).transpose().to_csv(fp, delimiter=delimiter, header=False, index=False)
 
     def from_csv(self, fp="/tmp/spectrum.csv", delimiter=","):
+        self.file_path = fp
         data = pd.DataFrame.from_csv(fp).T
         self.masses = data.columns.values
         self.intensities = data.values[0]

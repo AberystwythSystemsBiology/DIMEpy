@@ -1,7 +1,11 @@
-# DIMSpy
+# dimspy
 
 Direct Infusion Mass Spectrometry Processing and Analysis
 
-## Here Be Dragons
+## Installation
 
-This is in the really early stages of development. Things may not work as anticipated, yet.
+TODO:
+
+## Documentation
+
+TODO:
