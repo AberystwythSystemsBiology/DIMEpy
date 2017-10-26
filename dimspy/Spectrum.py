@@ -1,183 +1,220 @@
-import numpy as np, operator, pymzml, pickle as pkl, pandas as pd
+import os
+import numpy as np
+import operator
+import pymzml
+from scipy.sparse import csc_matrix, eye, diags
+from scipy.sparse.linalg import spsolve
+import warnings
+
+default_parameters = {
+    "MS1 Precision" : 1e-3,
+    "MSn Precision" : 1e-3,
+    "Measured Precision" : 1e-3,
+    "Scan Range" : "apex",
+    "Peak Type" : "peaks"
+}
+
+# OBO translation.
+
+polarity_dict = {
+    "POSITIVE" : "MS:1000130",
+    "NEGATIVE" : "MS:1000129"
+}
 
 class Spectrum(object):
-    def __init__(self, file_path, id, masses=np.array([]), intensities=np.array([])):
+    _loaded = False
+
+    _normalised = False
+    _transformed = False
+    _baseline_corrected = False
+
+    masses = np.array([])
+    intensities = np.array([])
+
+    __raw_spectrum = None
+
+    def __init__(self, file_path, id=None, polarity=None, parameters=None):
         self.file_path = file_path
-        self.id = id
-        self.masses = np.array(masses)
-        self.intensities = np.array(intensities)
+        if id == None:
+            self._get_id_from_fp()
+        else:
+            self.id = id
 
-    def pickle(self, fp):
-        with open(fp, "wb") as output:
-            pkl.dump(self, output, pkl.HIGHEST_PROTOCOL)
+        if parameters == None:
+            self.parameters = default_parameters
+        else:
+            self.parameters = parameters
 
-    def from_pickle(self, fp):
-        with open(fp, "rb") as infile:
-            o = pkl.load(infile)
-        self.file_path = fp
-        self.id = o.id
-        self.masses = o.masses
-        self.intensities = o.intensities
+        self.polarity = polarity
+        self._load_from_file()
 
-    def to_csv(self, fp="/tmp/spectrum.csv", delimiter=","):
-        output = []
-        output.append([self.id] + self.masses.tolist())
-        output.append([" "] + self.intensities.tolist())
-        pd.DataFrame(output).transpose().to_csv(fp, delimiter=delimiter, header=False, index=False)
 
-    def from_csv(self, fp="/tmp/spectrum.csv", delimiter=","):
-        self.file_path = fp
-        data = pd.DataFrame.from_csv(fp).T
-        self.masses = data.columns.values
-        self.intensities = data.values[0]
+    def _get_id_from_fp(self):
+        self.id = os.path.splitext(os.path.basename(self.file_path))[0]
 
-    def smooth(self, sigma=3):
-        from scipy.ndimage.filters import gaussian_filter1d
-        self.intensities = gaussian_filter1d(self.intensities, sigma)
+    # Over-egging the WhittakerSmoothing, need to take a look.
 
-    def correct_baseline(self, lambda_=100, porder=1, max_iterations=15):
-        from scipy.sparse import csc_matrix, eye, diags
-        from scipy.sparse.linalg import spsolve
+    def baseline_correction(self, inplace=True, max_iterations=2, lambda_=100):
+        warnings.warn("This is currently in development...")
+        def _WhittakerSmooth(intensities_copy, ones):
+            intensities_copy = np.matrix(intensities_copy)
+            diag_eye = eye(intensities_copy.size, format="csc")
+            diag = diag_eye[1:] - diag_eye[:-1]
+            sparse = diags(ones, 0, shape=(intensities_copy.size, intensities_copy.size))
 
-        def _WhittakerSmooth(x, w, lambda_, differences=1):
-            X = np.matrix(x)
-            m = X.size
-            i = np.arange(0, m)
-            E = eye(m, format='csc')
-            D = E[1:] - E[:-1]
-            W = diags(w, 0, shape=(m, m))
-            A = csc_matrix(W + (lambda_ * D.T * D))
-            B = csc_matrix(W * X.T)
-            background = spsolve(A, B)
-            return np.array(background)
+            csc_A = csc_matrix(sparse + (lambda_ * diag.T * diag))
+            csc_B = csc_matrix(sparse * intensities_copy.T)
+            return np.array(spsolve(csc_A, csc_B))
+
 
         def _AirPLS():
-            m = self.intensities.shape[0]
-            w = np.ones(m)
-            for i in range(1, max_iterations + 1):
-                z = _WhittakerSmooth(self.intensities, w, lambda_, porder)
-                d = self.intensities - z
-                dssn = np.abs(d[d < 0].sum())
-                if (dssn < 0.001 * (abs(self.intensities)).sum() or i == max_iterations):
+            intensities_copy = self.intensities
+            ones = np.ones(self.intensities.shape[0])
+            for index in range(0, max_iterations):
+                whittaker_smoothed = _WhittakerSmooth(intensities_copy, ones)
+                smoothed_intensities = (intensities_copy - whittaker_smoothed)
+                smoothed_sum = np.abs(smoothed_intensities[smoothed_intensities < 0].sum())
+                if (smoothed_sum < 0.001 * (abs(intensities_copy)).sum() or index == max_iterations):
                     break
-                w[d >= 0] = 0
-                w[d < 0] = np.exp(i * np.abs(d[d < 0]) / dssn)
-                w[0] = np.exp(i * (d[d < 0]).max() / dssn)
-                w[-1] = w[0]
-            return z
+                ones[smoothed_intensities >= 0] = [0]
+                ones[smoothed_intensities < 0] = np.exp(index * (smoothed_intensities[smoothed_intensities < 0]) / smoothed_sum)
+                ones[0] = np.exp(index * (smoothed_intensities[smoothed_intensities < 0]).max() / smoothed_sum)
+                ones[-1] = ones[0]
+            return smoothed_intensities
 
-        baseline = _AirPLS()
 
-        bc_i = []
-        bc_m = []
-        for index, intensity in enumerate(self.intensities - baseline):
+        if self._baseline_corrected == True:
+            warnings.warn("It seems like this spectrum has already been baseline corrected!")
+
+        calculated_baseline = _AirPLS()
+
+        baseline_corrected_intensities = []
+        baseline_corrected_masses = []
+
+
+
+        for index, intensity in enumerate(self.intensities - calculated_baseline):
             if intensity > 0:
-                bc_i.append(self.intensities[index])
-                bc_m.append(self.masses[index])
+                baseline_corrected_intensities.append(intensity)
+                baseline_corrected_masses.append(self.masses[index])
 
-        self.intensities = np.array(bc_i)
-        self.masses = np.array(bc_m)
+        baseline_corrected_intensities = np.array(baseline_corrected_intensities)
+        baseline_corrected_masses = np.array(baseline_corrected_masses)
 
+        if inplace == True:
+            self.intensities = baseline_corrected_intensities
+            self.masses = baseline_corrected_masses
+            self._baseline_corrected = True
+        else:
+            return baseline_corrected_masses, baseline_corrected_intensities
 
-    def normalise(self, method="tic"):
-        if method == "tic":
+    def normalise(self, method="tic", inplace=True):
+
+        if self._normalised == True:
+            warnings.warn("It looks like you've already normalsied this spectrum!")
+
+        if method.upper() == "TIC":
             sum_intensity = np.nansum(self.intensities)
             median_intensity = np.nanmedian(self.intensities)
-            self.intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
+            normalised_intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
         else:
-            pass
+            normalised_intensities = self.intensities
+        if inplace == True:
+            self.intensities = normalised_intensities
+            self._normalised = True
 
-    def transform(self, method="log10"):
-        if method == "log10":
-            self.intensities = np.log10(self.intensities)
+        else:
+            return normalised_intensities
 
-    def get_peaks(self, delta=3):
-        def _detect_peaks():
-            # TODO: Legacy code - badly needs a rewrite.
-            maxtab = []
-            mintab = []
-            x = range(len(self.intensities))
-            v = np.asarray(self.intensities)
-            mn, mx = np.Inf, -np.Inf
-            mnpos, mxpos = np.NaN, np.NaN
-            lookformax = True
-            for i in np.arange(len(v)):
-                this = v[i]
-                if this > mx:
-                    mx = this
-                    mxpos = x[i]
-                if this < mn:
-                    mn = this
-                    mnpos = x[i]
-                if lookformax:
-                    if this < mx - delta:
-                        maxtab.append(mxpos)
-                        mn = this
-                        mnpos = x[i]
-                        lookformax = False
-                else:
-                    if this > mn + delta:
-                        mintab.append(mnpos)
-                        mx = this
-                        mxpos = x[i]
-                        lookformax = True
+    def transform(self, method="log10", inplace=True):
 
-            return np.array(maxtab)
+        if self._transformed == True:
+            warnings.warn("It looks like you've already transformed this spectrum!")
 
-        peaks = _detect_peaks()
-        self.masses = self.masses[peaks]
-        self.intensities = self.intensities[peaks]
+        if method.upper() == "LOG10":
+            transformed_intensities = np.log10(self.intensities)
+        else:
+            transformed_intensities = self.intensities
+        if inplace == True:
+            self.intensities = transformed_intensities
+            self._transformed = True
+        else:
+            return transformed_intensities
 
-    def from_mzml(self, filepath, polarity=None, scan_range="all", peak_type="peaks", ms1_p=5e-6, msn_p=5e-6):
+    def _load_from_file(self):
+        if self.file_path.upper().endswith("MZML"):
+            self._from_mzml()
+        elif self.file_path.upper().endswith("CSV"):
+            print "CSV not implemented"
+        elif self.file_path.upper().endswith("PKL"):
+            print "PKL not implemented"
+        else:
+            raise Exception()
 
-        def _get_polarity():
-            reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p,
-                                       extraAccessions=[('MS:1000129', ['value']), ('MS:1000130', ['value'])])
+    def _from_mzml(self):
+        def __polarity():
+            reader = pymzml.run.Reader(self.file_path,
+                                       extraAccessions=[
+                                           ["MS:1000129", ["value"]],
+                                           ["MS:1000130", ["value"]]
+                                       ])
 
-            polarity_dict = {"positive" : "MS:1000130", "negative" : "MS:1000129"}
-            scans_of_interest = []
+            polarity_scans = []
             for scan_number, scan in enumerate(reader):
-                if scan.get(polarity_dict[polarity]) != None:
-                    scans_of_interest.append(scan_number)
-            return scans_of_interest
+                if scan.get(polarity_dict[self.polarity.upper()]) != None:
+                    polarity_scans.append(scan_number)
+            return polarity_scans
 
-        def _return_apex():
-            reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
+
+        def __return_apex(polarity_scans):
+            reader = pymzml.run.Reader(self.file_path,
+                                       MSn_Precision=self.parameters["MSn Precision"],
+                                       MS1_Precision=self.parameters["MS1 Precision"]
+                                       )
             tic_scans = []
             for scan_number, scan in enumerate(reader):
-                if scan_number in scans_of_interest:
+                if scan_number in polarity_scans:
                     tic_scans.append([scan["total ion current"], scan_number])
             tics = [x[0] for x in tic_scans]
             mad = np.mean(np.absolute(tics - np.mean(tics))) * 3
-            scan_range = [x[1] for x in tic_scans if x[0] > mad]
-            return scan_range
 
-        def _create_spectrum():
-            reader = pymzml.run.Reader(filepath, MS1_Precision=ms1_p, MSn_Precision=msn_p)
-            sample_spectrum = pymzml.spec.Spectrum(measuredPrecision=msn_p)
+            __get_spectrum([x[1] for x in tic_scans if x[0] > mad])
+
+        def __get_spectrum(scans):
+            reader = pymzml.run.Reader(self.file_path,
+                                       MS1_Precision=self.parameters["MS1 Precision"],
+                                       MSn_Precision=self.parameters["MSn Precision"]
+                                       )
+
+            self.__raw_spectrum = pymzml.spec.Spectrum(
+                measuredPrecision=self.parameters["Measured Precision"]
+            )
+
             for scan_number, scan in enumerate(reader):
-                if scan_number in scans_of_interest:
-                    sample_spectrum += scan
-            return sample_spectrum
+                if scan_number in scans:
+                    self.__raw_spectrum += scan
 
-        def _pymzl_spectrum_to_spectrum():
-            if peak_type == "centroided":
-                spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.centroidedPeaks]
-            elif peak_type == "reprofiled":
-                spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.reprofiledPeaks]
+
+            if self.parameters["Peak Type"] == "centroided":
+                spectrum = [[m, i] for m, i in self.__raw_spectrum.centroidedPeaks]
+            elif self.parameters["Peak Type"] == "reprofiled":
+                spectrum = [[m, i] for m, i in self.__raw_spectrum.reprofiledPeaks]
             else:
-                spectrum = [[masses, intensities] for masses, intensities in sample_spectrum.peaks]
+                spectrum = [[m, i] for m, i in self.__raw_spectrum.peaks]
+
             spectrum = sorted(spectrum, key=operator.itemgetter(0))
 
-            masses = np.array([x[0] for x in spectrum])
-            intensities = np.array([x[1] for x in spectrum])
+            self.masses = np.array([x[0] for x in spectrum])
+            self.intensities = np.array([x[1] for x in spectrum])
 
-            self.masses = masses
-            self.intensities = intensities
+            self._loaded = True
 
-        scans_of_interest = _get_polarity()
-        if scan_range == "apex":
-            scans_of_interest = _return_apex()
+        polarity_scans = __polarity()
 
-        sample_spectrum = _create_spectrum()
-        _pymzl_spectrum_to_spectrum()
+        if self.parameters["Scan Range"] == "apex":
+            __return_apex(polarity_scans)
+        else:
+            __get_spectrum(polarity_scans)
+
+    def plot(self):
+        pass
