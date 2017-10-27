@@ -38,6 +38,8 @@ class SpectrumListProcessor(object):
         :param results_path:
         :return:
         '''
+
+
         tics = [np.nansum(s.intensities) for s in self.spectrum_list.to_list()]
         mean_tic = np.nanmean(tics)
         mean_abs_dev = np.nanmean([abs(x - mean_tic) for x in tics])
