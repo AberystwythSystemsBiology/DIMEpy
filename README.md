@@ -43,9 +43,10 @@ parameters = {
 
 
 # Object to store processed spectrum.
-spectrum_list = dimspy.SpectrumList()
 
 for polarity in ["negative", "positive"]:
+    spectrum_list = dimspy.SpectrumList()
+
     for index, file in enumerate(os.listdir(mzMLpaths)):
         # Read a mzML file from a given directory, and process it using given parameters.
         spectrum = dimspy.Spectrum(file_path=os.path.join(mzMLpaths, file),

@@ -22,6 +22,7 @@ polarity_dict = {
 }
 
 class Spectrum(object):
+
     _loaded = False
 
     _normalised = False
@@ -34,6 +35,12 @@ class Spectrum(object):
     __raw_spectrum = None
 
     def __init__(self, file_path, id=None, polarity=None, parameters=None):
+        '''
+        :param file_path: path to mzML file.
+        :param id: unique identifier for the sample, if blank reverts to filename.
+        :param polarity: chosen polarity for inspection.
+        :param parameters: dictonary of spectrum parameters.
+        '''
         self.file_path = file_path
         if id == None:
             self._get_id_from_fp()
@@ -55,6 +62,13 @@ class Spectrum(object):
     # Over-egging the WhittakerSmoothing, need to take a look.
 
     def baseline_correction(self, inplace=True, max_iterations=2, lambda_=100):
+        '''
+
+        :param inplace:
+        :param max_iterations:
+        :param lambda_:
+        :return:
+        '''
         warnings.warn("This is currently in development...")
         def _WhittakerSmooth(intensities_copy, ones):
             intensities_copy = np.matrix(intensities_copy)
@@ -109,6 +123,12 @@ class Spectrum(object):
             return baseline_corrected_masses, baseline_corrected_intensities
 
     def normalise(self, method="tic", inplace=True):
+        '''
+
+        :param method:
+        :param inplace:
+        :return:
+        '''
 
         if self._normalised == True:
             warnings.warn("It looks like you've already normalsied this spectrum!")
@@ -127,6 +147,12 @@ class Spectrum(object):
             return normalised_intensities
 
     def transform(self, method="log10", inplace=True):
+        '''
+
+        :param method:
+        :param inplace:
+        :return:
+        '''
 
         if self._transformed == True:
             warnings.warn("It looks like you've already transformed this spectrum!")
