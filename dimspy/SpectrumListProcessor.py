@@ -2,6 +2,7 @@ import numpy as np
 import warnings
 import multiprocess
 import scipy.stats as sc_stats
+import bisect
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import Imputer
@@ -91,35 +92,41 @@ class SpectrumListProcessor(object):
         else:
             warnings.warn("Non inplace binning yet to be implemented")
 
-
-
     def center(self, inplace=True, n_jobs=1):
         '''
-
         :param inplace:
         :param n_jobs:
         :return:
         '''
+
         def _center(data):
             spectrum, binned_masses = data
             centered_intensities = []
             spectrum_intensities = spectrum.intensities.tolist()
             spectrum_masses = spectrum.masses.tolist()
+
             for b_mass in binned_masses:
-                if b_mass in spectrum_masses:
-                    centered_intensities.append(spectrum_intensities[spectrum_masses.index(b_mass)])
+                j = bisect.bisect_left(spectrum_masses, b_mass)
+
+                if j < len(spectrum_masses) and spectrum_masses[j]==b_mass:
+                    centered_intensities.append(spectrum_intensities[j])
                 else:
                     centered_intensities.append(np.nan)
+
             centered_intensities = np.array(centered_intensities)
+
             return centered_intensities, spectrum.id
 
         if self._binned == False:
             warnings.warn("You need to bin the data before you can center it!")
         else:
-            binned_masses = np.array(sum([x.masses.tolist() for x in self.spectrum_list.to_list()], []))
+            binned_masses = list(sum([x.masses.tolist() for x in self.spectrum_list.to_list()], []))
 
             pool = multiprocess.Pool(n_jobs)
-            centered_spectrum = pool.map_async(_center, [[spectrum, binned_masses] for spectrum in self.spectrum_list.to_list()]).get()
+
+            centered_spectrum = pool.map_async(_center, [[spectrum, binned_masses] for spectrum in
+                                                         self.spectrum_list.to_list()])
+            centered_spectrum = centered_spectrum.get()
             pool.close()
             pool.join()
 
@@ -130,11 +137,9 @@ class SpectrumListProcessor(object):
                         if spectrum.id == id:
                             spectrum.masses = binned_masses
                             spectrum.intensities = centered_intensities
-                            break
                     self._centered = True
                 else:
                     warnings.warn("Inplace centering not implemented!")
-
 
     def value_imputation(self, method="knn", threshold=0.5, inplace=True):
         '''
