@@ -5,6 +5,7 @@ import pymzml
 from scipy.sparse import csc_matrix, eye, diags
 from scipy.sparse.linalg import spsolve
 import warnings
+import matplotlib.pyplot as plt
 
 default_parameters = {
     "MS1 Precision" : 1e-3,
@@ -29,12 +30,14 @@ class Spectrum(object):
     _transformed = False
     _baseline_corrected = False
 
+    _injection_order = None
+
     masses = np.array([])
     intensities = np.array([])
 
     __raw_spectrum = None
 
-    def __init__(self, file_path, id=None, polarity=None, parameters=None):
+    def __init__(self, file_path, id=None, polarity=None, parameters=None, injection_order=None):
         '''
         :param file_path: path to mzML file.
         :param id: unique identifier for the sample, if blank reverts to filename.
@@ -51,6 +54,11 @@ class Spectrum(object):
             self.parameters = default_parameters
         else:
             self.parameters = parameters
+
+        if injection_order != None:
+            self._injection_order = int(injection_order)
+        else:
+            warnings.warn("Injection order information is required if you want to use outlier detection!")
 
         self.polarity = polarity
         self._load_from_file()
@@ -242,5 +250,12 @@ class Spectrum(object):
         else:
             __get_spectrum(polarity_scans)
 
-    def plot(self):
-        pass
+    def plot(self, show=True):
+        plt.figure()
+        plt.title(self.id)
+        plt.plot(self.masses, self.intensities)
+        plt.xlabel("Mass-to-ion (m/z)")
+        plt.ylim(0, max(self.intensities))
+        plt.ylabel("Intensity")
+        plt.show()
+        plt.clf()

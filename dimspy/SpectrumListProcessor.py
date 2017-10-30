@@ -29,7 +29,7 @@ class SpectrumListProcessor(object):
         '''
         self.spectrum_list.remove(spectrum)
 
-    def outlier_detection(self, mad_threshold=3, inplace=True, plot_path=None, results_path=None):
+    def outlier_detection(self, mad_threshold=3, inplace=True, plot=False, results_path=None):
         '''
 
         :param mad_threshold:
@@ -53,6 +53,18 @@ class SpectrumListProcessor(object):
         else:
             return outlier_spectrum
 
+        if plot == True:
+            plt.figure()
+            plt.xlabel("Injection Order")
+            plt.ylabel("Total Ion Count (TIC)")
+            plt.scatter([x._injection_order for x in self.spectrum_list.to_list()],
+                        [sum(x.intensities) for x in self.spectrum_list.to_list()],
+                        marker="o", color="b", label="Passed")
+            plt.scatter([x._injection_order for x in outlier_spectrum],
+                        [sum(x.intensities) for x in outlier_spectrum],
+                        marker="x", color="r", label="Outliers")
+            plt.legend(loc="upper right", numpoints=1)
+            plt.show()
 
     def binning(self, bin_size=1, statistic="mean", inplace=True, n_jobs=1):
         '''
