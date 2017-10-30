@@ -250,12 +250,25 @@ class Spectrum(object):
         else:
             __get_spectrum(polarity_scans)
 
-    def plot(self, show=True):
+    def plot(self, show=True, xlim=[], scaled=False, file_path=None):
         plt.figure()
         plt.title(self.id)
-        plt.plot(self.masses, self.intensities)
         plt.xlabel("Mass-to-ion (m/z)")
-        plt.ylim(0, max(self.intensities))
-        plt.ylabel("Intensity")
-        plt.show()
+        if xlim == []:
+            xlim = [min(self.masses), max(self.masses)]
+            plt.ylim(0, max(self.intensities))
+        plt.xlim(xlim)
+        if scaled == False:
+            plt.ylim(0, max(self.intensities))
+            plt.plot(self.masses, self.intensities)
+            plt.ylabel("Intensity")
+        else:
+            scaled_intensities = self.normalise(method="tic", inplace=False)
+            plt.plot(self.masses, scaled_intensities)
+            plt.ylim(0, max(scaled_intensities))
+            plt.ylabel("Scaled Intensity")
+        if file_path != None:
+            plt.savefig(file_path)
+        else:
+            plt.show()
         plt.clf()

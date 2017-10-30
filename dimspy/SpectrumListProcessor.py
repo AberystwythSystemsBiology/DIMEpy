@@ -21,6 +21,9 @@ class SpectrumListProcessor(object):
         self._centered = False
         self._value_imputated = False
 
+    def to_list(self):
+        return self.spectrum_list.to_list()
+
     def remove(self, spectrum):
         '''
 
@@ -40,11 +43,13 @@ class SpectrumListProcessor(object):
         '''
 
 
-        tics = [np.nansum(s.intensities) for s in self.spectrum_list.to_list()]
+        tics = [sum(s.intensities) for s in self.to_list()]
+
         mean_tic = np.nanmean(tics)
         mean_abs_dev = np.nanmean([abs(x - mean_tic) for x in tics])
         ad_f_m = [abs((x - mean_tic) / mean_abs_dev) for x in tics]
-        outlier_spectrum = [s for i, s in enumerate(self.spectrum_list.to_list()) if ad_f_m[i] > mad_threshold]
+
+        outlier_spectrum = [s for i, s in enumerate(self.to_list()) if ad_f_m[i] > mad_threshold]
 
         if inplace == True:
             [self.remove(x) for x in outlier_spectrum]
@@ -57,8 +62,8 @@ class SpectrumListProcessor(object):
             plt.figure()
             plt.xlabel("Injection Order")
             plt.ylabel("Total Ion Count (TIC)")
-            plt.scatter([x._injection_order for x in self.spectrum_list.to_list()],
-                        [sum(x.intensities) for x in self.spectrum_list.to_list()],
+            plt.scatter([x._injection_order for x in self.to_list()],
+                        [sum(x.intensities) for x in self.to_list()],
                         marker="o", color="b", label="Passed")
             plt.scatter([x._injection_order for x in outlier_spectrum],
                         [sum(x.intensities) for x in outlier_spectrum],
@@ -88,7 +93,7 @@ class SpectrumListProcessor(object):
 
 
         pool = multiprocess.Pool(n_jobs)
-        binned_spectra = pool.map_async(_bin, [spectrum for spectrum in self.spectrum_list.to_list()]).get()
+        binned_spectra = pool.map_async(_bin, [spectrum for spectrum in self.to_list()]).get()
         pool.close()
         pool.join()
 
@@ -96,7 +101,7 @@ class SpectrumListProcessor(object):
             for result in binned_spectra:
                 binned_masses, binned_intensities, id = result
 
-                for spectrum in self.spectrum_list.to_list():
+                for spectrum in self.to_list():
                     if spectrum.id == id:
                         spectrum.masses = binned_masses
                         spectrum.intensities = binned_intensities
@@ -134,12 +139,12 @@ class SpectrumListProcessor(object):
         if self._binned == False:
             warnings.warn("You need to bin the data before you can center it!")
         else:
-            binned_masses = list(sum([x.masses.tolist() for x in self.spectrum_list.to_list()], []))
+            binned_masses = list(sum([x.masses.tolist() for x in self.to_list()], []))
 
             pool = multiprocess.Pool(n_jobs)
 
             centered_spectrum = pool.map_async(_center, [[spectrum, binned_masses] for spectrum in
-                                                         self.spectrum_list.to_list()])
+                                                         self.to_list()])
             centered_spectrum = centered_spectrum.get()
             pool.close()
             pool.join()
@@ -147,7 +152,7 @@ class SpectrumListProcessor(object):
             for result in centered_spectrum:
                 centered_intensities, id = result
                 if inplace == True:
-                    for spectrum in self.spectrum_list.to_list():
+                    for spectrum in self.to_list():
                         if spectrum.id == id:
                             spectrum.masses = binned_masses
                             spectrum.intensities = centered_intensities
@@ -164,7 +169,7 @@ class SpectrumListProcessor(object):
         :return:
         '''
         def _remove_bins_by_threshold():
-            sample_threshold = len(self.spectrum_list.to_list()) * threshold
+            sample_threshold = len(self.to_list()) * threshold
             df = self.spectrum_list.flatten_to_dataframe()
             df.dropna(axis=1, thresh=sample_threshold, inplace=True)
             return df
@@ -197,7 +202,7 @@ class SpectrumListProcessor(object):
         masses = df.columns
         for id, values in df.iterrows():
             intensities = values.values
-            spectrum = [x for x in self.spectrum_list.to_list() if x.id == id][0]
+            spectrum = [x for x in self.to_list() if x.id == id][0]
             spectrum.masses = masses
             spectrum.intensities = intensities
 
@@ -208,4 +213,4 @@ class SpectrumListProcessor(object):
         :return:
         '''
         from SpectrumList import SpectrumList
-        return SpectrumList(self.spectrum_list.to_list())
+        return SpectrumList(self.to_list())

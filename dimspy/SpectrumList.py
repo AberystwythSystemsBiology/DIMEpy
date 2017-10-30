@@ -16,11 +16,11 @@ class SpectrumList(object):
     def to_list(self):
         '''
 
-        :return:
+        :return: Spectrum list.
         '''
-        return self.__spectrum
+        return list(self.__spectrum)
 
-    def add(self, Spectrum):
+    def append(self, Spectrum):
         '''
 
         :param Spectrum:
