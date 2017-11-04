@@ -145,6 +145,9 @@ class Spectrum(object):
             sum_intensity = np.nansum(self.intensities)
             median_intensity = np.nanmedian(self.intensities)
             normalised_intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
+        elif method.upper() == "MEDIAN":
+            median_intensity = np.nanmedian(self.intensities)
+            normalised_intensities = np.array([x-median_intensity for x in self.intensities])
         else:
             normalised_intensities = self.intensities
         if inplace == True:
@@ -167,6 +170,12 @@ class Spectrum(object):
 
         if method.upper() == "LOG10":
             transformed_intensities = np.log10(self.intensities)
+        elif method.upper() == "CUBE":
+            transformed_intensities = np.array([i ** (1. / 3) for i in self.intensities])
+        elif method.upper() == "NLOG":
+            transformed_intensities = np.log(self.intensities)
+        elif method.upper() == "LOG2":
+            transformed_intensities = np.log2(self.intensities)
         else:
             transformed_intensities = self.intensities
         if inplace == True:

@@ -6,7 +6,6 @@ import bisect
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import Imputer
-from joblib import Parallel, delayed
 
 class SpectrumListProcessor(object):
 
@@ -19,6 +18,7 @@ class SpectrumListProcessor(object):
         self._outlier_detected = False
         self._binned = False
         self._centered = False
+        self._scaled = False
         self._value_imputated = False
 
     def to_list(self):
@@ -71,7 +71,7 @@ class SpectrumListProcessor(object):
             plt.legend(loc="upper right", numpoints=1)
             plt.show()
 
-    def binning(self, bin_size=1, statistic="mean", inplace=True, n_jobs=1):
+    def binning(self, bin_size=0.25, statistic="mean", inplace=True, n_jobs=1):
         '''
 
         :param bin_size:
@@ -158,7 +158,49 @@ class SpectrumListProcessor(object):
                             spectrum.intensities = centered_intensities
                     self._centered = True
                 else:
-                    warnings.warn("Inplace centering not implemented!")
+                    warnings.warn("Non-inplace centering not implemented!")
+
+    def scale(self, method="MC", inplace=True, n_jobs=1):
+        def _mean_center(spectrum):
+            mean_intensity = np.mean(spectrum.intensities)
+            return np.array([x-mean_intensity for x in spectrum.intensities])
+
+        def _scaler(data):
+            spectrum, method = data
+            mean_centered =_mean_center(spectrum)
+            if method.upper() == "AUTO":
+                variance = np.var(mean_centered)
+                scaled_intensities = np.array([x/variance for x in mean_centered])
+            elif method.upper() == "RANGE":
+                r = np.ptp(spectrum.intensities)
+                scaled_intensities = np.array([x/r for x in mean_centered])
+            elif method.upper() == "PARETO":
+                pareto = np.std(spectrum.intensities)**(1/2)
+                scaled_intensities = np.array([x/pareto for x in mean_centered])
+            elif method.upper() == "MC":
+                scaled_intensities = mean_centered
+            return scaled_intensities, spectrum.id
+
+        pool = multiprocess.Pool(n_jobs)
+
+        scaled_spectrum = pool.map_async(_scaler, [[spectrum, method] for spectrum in
+                                                   self.to_list()])
+        scaled_spectrum = scaled_spectrum.get()
+
+        pool.close()
+        pool.join()
+
+        for result in scaled_spectrum:
+            scaled_intensities, id = result
+            if inplace == True:
+                for spectrum in self.to_list():
+                    if spectrum.id == id:
+                        spectrum.intensities = scaled_intensities
+                self._scaled = True
+            else:
+                warnings.warn("Non-inplace centering not implemented!")
+
+
 
     def value_imputation(self, method="knn", threshold=0.5, inplace=True):
         '''
@@ -169,7 +211,7 @@ class SpectrumListProcessor(object):
         :return:
         '''
         def _remove_bins_by_threshold():
-            sample_threshold = len(self.to_list()) * threshold
+            sample_threshold = int(len(self.to_list()) * threshold)
             df = self.spectrum_list.flatten_to_dataframe()
             df.dropna(axis=1, thresh=sample_threshold, inplace=True)
             return df
@@ -181,11 +223,18 @@ class SpectrumListProcessor(object):
                 df = pd.DataFrame(imputated, columns=df.columns, index=df.index)
             elif method.upper == "BASIC":
                 df.fillna(value=(np.nanargmin(df.values) / 2), inplace=True)
+            elif method.upper == "MEAN":
+                pass
 
             return df
 
-        df = _remove_bins_by_threshold()
-        df = _value_imputation(df)
+
+        if method.upper() == "ALL":
+            df = self.spectrum_list.flatten_to_dataframe()
+            df.dropna(axis=1, how="all", inplace=True)
+        else:
+            df = _remove_bins_by_threshold()
+            df = _value_imputation(df)
 
         if inplace == True:
             self.pandas_to_spectrum(df)
