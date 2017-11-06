@@ -211,9 +211,8 @@ class SpectrumListProcessor(object):
         :return:
         '''
         def _remove_bins_by_threshold():
-            sample_threshold = int(len(self.to_list()) * threshold)
             df = self.spectrum_list.flatten_to_dataframe()
-            df.dropna(axis=1, thresh=sample_threshold, inplace=True)
+            df = df.loc[:, df.isnull().mean() < threshold]
             return df
 
         def _value_imputation(df):
@@ -221,9 +220,12 @@ class SpectrumListProcessor(object):
                 imp = Imputer(axis=0)
                 imputated = imp.fit_transform(df)
                 df = pd.DataFrame(imputated, columns=df.columns, index=df.index)
-            elif method.upper == "BASIC":
-                df.fillna(value=(np.nanargmin(df.values) / 2), inplace=True)
-            elif method.upper == "MEAN":
+            elif method.upper() == "BASIC":
+                for sample in df.index:
+                    sample_intensities = df.ix[sample].values
+                    filler = np.nanmin(sample_intensities) / 2
+                    df.ix[sample] = df.ix[sample].replace(np.nan, filler)
+            elif method.upper() == "MEAN":
                 pass
 
             return df
@@ -231,7 +233,7 @@ class SpectrumListProcessor(object):
 
         if method.upper() == "ALL":
             df = self.spectrum_list.flatten_to_dataframe()
-            df.dropna(axis=1, how="all", inplace=True)
+            df = df.loc[:, df.isnull().mean() < 1]
         else:
             df = _remove_bins_by_threshold()
             df = _value_imputation(df)
