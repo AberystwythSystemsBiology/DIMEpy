@@ -145,6 +145,9 @@ class Spectrum(object):
             sum_intensity = np.nansum(self.intensities)
             median_intensity = np.nanmedian(self.intensities)
             normalised_intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
+        elif method.upper() == "MEDIAN":
+            median_intensity = np.nanmedian(self.intensities)
+            normalised_intensities = np.array([x-median_intensity for x in self.intensities])
         else:
             normalised_intensities = self.intensities
         if inplace == True:
@@ -167,6 +170,12 @@ class Spectrum(object):
 
         if method.upper() == "LOG10":
             transformed_intensities = np.log10(self.intensities)
+        elif method.upper() == "CUBE":
+            transformed_intensities = np.array([i ** (1. / 3) for i in self.intensities])
+        elif method.upper() == "NLOG":
+            transformed_intensities = np.log(self.intensities)
+        elif method.upper() == "LOG2":
+            transformed_intensities = np.log2(self.intensities)
         else:
             transformed_intensities = self.intensities
         if inplace == True:
@@ -250,12 +259,31 @@ class Spectrum(object):
         else:
             __get_spectrum(polarity_scans)
 
-    def plot(self, show=True):
+    def plot(self, show=True, xlim=[], scaled=False, file_path=None):
         plt.figure()
         plt.title(self.id)
-        plt.plot(self.masses, self.intensities)
         plt.xlabel("Mass-to-ion (m/z)")
         plt.ylim(0, max(self.intensities))
         plt.ylabel("Intensity")
         plt.show()
         plt.clf()
+
+        if xlim == []:
+            xlim = [min(self.masses), max(self.masses)]
+            plt.ylim(0, max(self.intensities))
+        plt.xlim(xlim)
+        if scaled == False:
+            plt.ylim(0, max(self.intensities))
+            plt.plot(self.masses, self.intensities)
+            plt.ylabel("Intensity")
+        else:
+            scaled_intensities = self.normalise(method="tic", inplace=False)
+            plt.plot(self.masses, scaled_intensities)
+            plt.ylim(0, max(scaled_intensities))
+            plt.ylabel("Scaled Intensity")
+        if file_path != None:
+            plt.savefig(file_path)
+        else:
+            plt.show()
+        plt.clf()
+>>>>>>> 3bcb5cb837a44f6a55f2d16515f54fe7764efb5f
