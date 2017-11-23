@@ -136,6 +136,7 @@ class SpectrumListProcessor(object):
         else:
             binned_masses = list(sum([x.masses.tolist() for x in self.spectrum_list.to_list()], []))
 
+
             pool = multiprocess.Pool(n_jobs)
 
             centered_spectrum = pool.map_async(_center, [[spectrum, binned_masses] for spectrum in
