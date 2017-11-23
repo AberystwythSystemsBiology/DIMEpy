@@ -124,13 +124,15 @@ class SpectrumListProcessor(object):
             spectrum_intensities = spectrum.intensities.tolist()
             spectrum_masses = spectrum.masses.tolist()
 
+            '''
+            for i in m:
+                j = bisect.bisect_left(sm,i)
+                smm.append(si[j] if (j < len(sm) and sm[j]==i) else None)
+            '''
+
             for b_mass in binned_masses:
                 j = bisect.bisect_left(spectrum_masses, b_mass)
-
-                if j < len(spectrum_masses) and spectrum_masses[j]==b_mass:
-                    centered_intensities.append(spectrum_intensities[j])
-                else:
-                    centered_intensities.append(np.nan)
+                centered_intensities.append(spectrum_intensities[j] if (j < len(spectrum_masses) and spectrum_masses[j]==b_mass) else np.nan)
 
             centered_intensities = np.array(centered_intensities)
 
