@@ -286,4 +286,3 @@ class Spectrum(object):
         else:
             plt.show()
         plt.clf()
->>>>>>> 3bcb5cb837a44f6a55f2d16515f54fe7764efb5f
