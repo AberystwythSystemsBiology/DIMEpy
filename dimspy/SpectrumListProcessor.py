@@ -219,11 +219,11 @@ class SpectrumListProcessor(object):
                 for sample in df.index:
                     intensities = df.ix[sample].values
                     if method.upper() == "BASIC":
-                        filler = np.nanmin(intensitites) / 2
+                        filler = np.nanmin(intensities) / 2
                     elif method.upper() == "MEAN":
-                        filler = np.nanmean(intensitities)
+                        filler = np.nanmean(intensities)
                     elif method.upper() == "MIN":
-                        filler = np.nanmin(intensitities)
+                        filler = np.nanmin(intensities)
                     elif method.upper() == "MEDIAN":
                         filler = np.nanmedian(intensities)
                     df.ix[sample] = df.ix[sample].replace(np.nan, filler)
