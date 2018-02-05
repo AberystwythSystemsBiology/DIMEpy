@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# encoding: utf-8
+
 import numpy as np
 import warnings
 import multiprocess
@@ -118,54 +121,42 @@ class SpectrumListProcessor(object):
         :return:
         '''
 
-        def _center(data):
-            spectrum, binned_masses = data
-            centered_intensities = []
-            spectrum_intensities = spectrum.intensities.tolist()
-            spectrum_masses = spectrum.masses.tolist()
+        def _center(spectrum, m):
+            smm = []
+            sm = spectrum.masses
+            si = spectrum.intensities
 
-            '''
             for i in m:
-                j = bisect.bisect_left(sm,i)
-                smm.append(si[j] if (j < len(sm) and sm[j]==i) else None)
-            '''
-
-            for b_mass in binned_masses:
-                j = bisect.bisect_left(spectrum_masses, b_mass)
-                centered_intensities.append(spectrum_intensities[j] if (j < len(spectrum_masses) and spectrum_masses[j]==b_mass) else np.nan)
-
-            centered_intensities = np.array(centered_intensities)
-
-            return centered_intensities, spectrum.id
+                j = bisect.bisect_left(sm, i)
+                smm.append(si[j] if (j < len(sm) and sm[j]==i) else np.nan)
+            return smm, spectrum.id
 
         if self._binned == False:
             warnings.warn("You need to bin the data before you can center it!")
         else:
-            binned_masses = list(sum([x.masses.tolist() for x in self.to_list()], []))
+            binned_masses = []
+            for spectrum in self.to_list():
+                binned_masses.extend(spectrum.masses)
+            binned_masses = list(set(binned_masses))
 
-
-            pool = multiprocess.Pool(n_jobs)
-
-            centered_spectrum = pool.map_async(_center, [[spectrum, binned_masses] for spectrum in
-                                                         self.to_list()])
-            centered_spectrum = centered_spectrum.get()
-            pool.close()
-            pool.join()
+            centered_spectrum = []
+            for spectrum in self.to_list():
+               centered_spectrum.append(_center(spectrum, binned_masses))
 
             for result in centered_spectrum:
                 centered_intensities, id = result
                 if inplace == True:
                     for spectrum in self.to_list():
                         if spectrum.id == id:
-                            spectrum.masses = binned_masses
-                            spectrum.intensities = centered_intensities
+                            spectrum.masses = np.asarray(binned_masses)
+                            spectrum.intensities = np.asarray(centered_intensities)
                     self._centered = True
                 else:
                     warnings.warn("Non-inplace centering not implemented!")
 
     def scale(self, method="MC", inplace=True, n_jobs=1):
         def _mean_center(spectrum):
-            mean_intensity = np.mean(spectrum.intensities)
+            mean_intensity = np.nanmean(spectrum.intensities)
             return np.array([x-mean_intensity for x in spectrum.intensities])
 
         def _scaler(data):
@@ -175,7 +166,7 @@ class SpectrumListProcessor(object):
                 variance = np.var(mean_centered)
                 scaled_intensities = np.array([x/variance for x in mean_centered])
             elif method.upper() == "RANGE":
-                r = np.ptp(spectrum.intensities)
+                r = np.nanmax(spectrum.intensities) - np.nanmin(spectrum.intensities)
                 scaled_intensities = np.array([x/r for x in mean_centered])
             elif method.upper() == "PARETO":
                 pareto = np.std(spectrum.intensities)**(1/2)
@@ -215,7 +206,8 @@ class SpectrumListProcessor(object):
         '''
         def _remove_bins_by_threshold():
             df = self.spectrum_list.flatten_to_dataframe()
-            df = df.loc[:, df.isnull().mean() < threshold]
+            nc = df.isnull().sum()
+            df = df[nc[nc < (len(df.index.values)*threshold)].index.values]
             return df
 
         def _value_imputation(df):
@@ -223,13 +215,18 @@ class SpectrumListProcessor(object):
                 imp = Imputer(axis=0)
                 imputated = imp.fit_transform(df)
                 df = pd.DataFrame(imputated, columns=df.columns, index=df.index)
-            elif method.upper() == "BASIC":
+            else:
                 for sample in df.index:
-                    sample_intensities = df.ix[sample].values
-                    filler = np.nanmin(sample_intensities) / 2
+                    intensities = df.ix[sample].values
+                    if method.upper() == "BASIC":
+                        filler = np.nanmin(intensitites) / 2
+                    elif method.upper() == "MEAN":
+                        filler = np.nanmean(intensitities)
+                    elif method.upper() == "MIN":
+                        filler = np.nanmin(intensitities)
+                    elif method.upper() == "MEDIAN":
+                        filler = np.nanmedian(intensities)
                     df.ix[sample] = df.ix[sample].replace(np.nan, filler)
-            elif method.upper() == "MEAN":
-                pass
 
             return df
 
