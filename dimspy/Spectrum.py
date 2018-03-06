@@ -141,8 +141,7 @@ class Spectrum(object):
         if self._normalised is False:
             if method.upper() == "TIC":
                 sum_intensity = np.nansum(self.intensities)
-                median_intensity = np.nanmedian(self.intensities)
-                normalised_intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
+                normalised_intensities = np.array([(x / sum_intensity) for x in self.intensities])
             elif method.upper() == "MEDIAN":
                 median_intensity = np.nanmedian(self.intensities)
                 normalised_intensities = np.array([x-median_intensity for x in self.intensities])
