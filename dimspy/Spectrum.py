@@ -12,7 +12,7 @@ default_parameters = {
     "MSn Precision": 1e-3,
     "Measured Precision": 1e-3,
     "Scan Range": "apex",
-    "Peak Type": "peaks"
+    "Peak Type": "centroided"
 }
 
 # OBO translation.
@@ -63,6 +63,9 @@ class Spectrum(object):
 
         self.polarity = polarity
         self._load_from_file()
+        self._normalised = False
+        self._transformed = False
+        self._baseline_corrected = False
 
     def _get_id_from_fp(self):
         self.id = os.path.splitext(os.path.basename(self.file_path))[0]
@@ -127,7 +130,7 @@ class Spectrum(object):
         else:
             return baseline_corrected_masses, baseline_corrected_intensities
 
-    def _normalise(self, method="tic", inplace=True):
+    def _normalise(self, method="tic"):
         '''
 
         :param method:
@@ -135,24 +138,22 @@ class Spectrum(object):
         :return:
         '''
 
-        if self._normalised is True:
-            warnings.warn("It looks like you've already normalsied this spectrum!")
-
-        if method.upper() == "TIC":
-            sum_intensity = np.nansum(self.intensities)
-            median_intensity = np.nanmedian(self.intensities)
-            normalised_intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
-        elif method.upper() == "MEDIAN":
-            median_intensity = np.nanmedian(self.intensities)
-            normalised_intensities = np.array([x-median_intensity for x in self.intensities])
+        if self._normalised is False:
+            if method.upper() == "TIC":
+                sum_intensity = np.nansum(self.intensities)
+                median_intensity = np.nanmedian(self.intensities)
+                normalised_intensities = np.array([(x / sum_intensity) * median_intensity for x in self.intensities])
+            elif method.upper() == "MEDIAN":
+                median_intensity = np.nanmedian(self.intensities)
+                normalised_intensities = np.array([x-median_intensity for x in self.intensities])
+            else:
+                normalised_intensities = self.intensities
         else:
+            warnings.warn("Warning: %s already normalised, ignoring" % self.id)
             normalised_intensities = self.intensities
-        if inplace is True:
-            self.intensities = normalised_intensities
-            self._normalised = True
 
-        else:
-            return normalised_intensities
+        self.intensities = normalised_intensities
+        self._normalised = True
 
     def _transform(self, method="log10", inplace=True):
         '''
@@ -162,19 +163,21 @@ class Spectrum(object):
         :return:
         '''
 
-        if self._transformed is True:
-            warnings.warn("It looks like you've already transformed this spectrum!")
-
-        if method.upper() == "LOG10":
-            transformed_intensities = np.log10(self.intensities)
-        elif method.upper() == "CUBE":
-            transformed_intensities = np.array([i ** (1. / 3) for i in self.intensities])
-        elif method.upper() == "NLOG":
-            transformed_intensities = np.log(self.intensities)
-        elif method.upper() == "LOG2":
-            transformed_intensities = np.log2(self.intensities)
+        if self._transformed is False:
+            if method.upper() == "LOG10":
+                transformed_intensities = np.log10(self.intensities)
+            elif method.upper() == "CUBE":
+                transformed_intensities = np.array([i ** (1. / 3) for i in self.intensities])
+            elif method.upper() == "NLOG":
+                transformed_intensities = np.log(self.intensities)
+            elif method.upper() == "LOG2":
+                transformed_intensities = np.log2(self.intensities)
+            else:
+                transformed_intensities = self.intensities
         else:
+            warnings.warn("Warning: %s already normalised, ignoring" % self.id)
             transformed_intensities = self.intensities
+
         if inplace is True:
             self.intensities = transformed_intensities
             self._transformed = True

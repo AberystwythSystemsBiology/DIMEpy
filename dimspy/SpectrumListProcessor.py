@@ -86,16 +86,31 @@ class SpectrumListProcessor(object):
         :param n_jobs:
         :return:
         '''
+        bins = np.arange(round(self.mass_range[0]), round(self.mass_range[1]), step=bin_size)
+
+        def _make_bins():
+            binned_masses = {b: [] for b in bins}
+
+            for spectrum in self.to_list():
+                for b in bins:
+                    for m in spectrum.masses:
+                        if m >= b and m < b+bin_size:
+                            binned_masses[b].append(m)
+            return binned_masses
+
         def _bin(spectrum):
-            bins = np.arange(
-                self.mass_range[0], self.mass_range[1], step=bin_size)
 
             b_i, b_m, b_n = sc_stats.binned_statistic(spectrum.masses,
-                                                      spectrum.intensities,
-                                                      bins=bins,
-                                                      statistic=statistic)
+                                                    spectrum.intensities,
+                                                    bins=bins,
+                                                    statistic=statistic)
+            return b_m[:-1], b_i, spectrum.id
 
-            return [bins[:-1], b_i, spectrum.id]
+        bin_dicts = _make_bins()
+        for idx, b in enumerate(bins):
+            values = bin_dicts[b]
+            if len(values) > 0:
+                bins[idx] = sum(values)/len(values)
 
         pool = multiprocess.Pool(n_jobs)
         binned_spectra = pool.map_async(
@@ -164,7 +179,7 @@ class SpectrumListProcessor(object):
 
     def transform(self, method="nlog"):
         for spectrum in self.to_list():
-            spectrum._normalise(method=method)
+            spectrum._transform(method=method)
 
     def value_imputation(self, method="basic", threshold=0.5, inplace=True):
         '''
