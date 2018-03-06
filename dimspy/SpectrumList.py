@@ -1,8 +1,10 @@
+
 import pandas as pd
 import cPickle as pkl
 import collections
 import csv
 import numpy as np
+
 
 class SpectrumList(object):
 
@@ -13,12 +15,6 @@ class SpectrumList(object):
         '''
         self.__spectrum = _spectrum
 
-    def to_list(self):
-        '''
-
-        :return: Spectrum list.
-        '''
-        return list(self.__spectrum)
 
     def append(self, Spectrum):
         '''
@@ -76,3 +72,21 @@ class SpectrumList(object):
             df.index = [spectrum.id]
             output.append(df)
         return pd.concat(output, axis=0)
+
+    def to_list(self):
+        return list(self.__spectrum)
+
+    def get_mass_range(self):
+        smallest = None
+        largest = None
+
+        for spectrum in self.to_list():
+            if min(spectrum.masses) < smallest or smallest is None:
+                smallest = min(spectrum.masses)
+            if max(spectrum.masses) > largest or largest is None:
+                largest = max(spectrum.masses)
+
+        return smallest, largest
+
+    def __repr__(self):
+        return repr(self.to_list())

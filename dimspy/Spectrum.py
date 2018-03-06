@@ -8,19 +8,20 @@ import warnings
 import matplotlib.pyplot as plt
 
 default_parameters = {
-    "MS1 Precision" : 1e-3,
-    "MSn Precision" : 1e-3,
-    "Measured Precision" : 1e-3,
-    "Scan Range" : "apex",
-    "Peak Type" : "peaks"
+    "MS1 Precision": 1e-3,
+    "MSn Precision": 1e-3,
+    "Measured Precision": 1e-3,
+    "Scan Range": "apex",
+    "Peak Type": "peaks"
 }
 
 # OBO translation.
 
 polarity_dict = {
-    "POSITIVE" : "MS:1000130",
-    "NEGATIVE" : "MS:1000129"
+    "POSITIVE": "MS:1000130",
+    "NEGATIVE": "MS:1000129"
 }
+
 
 class Spectrum(object):
 
@@ -45,24 +46,23 @@ class Spectrum(object):
         :param parameters: dictonary of spectrum parameters.
         '''
         self.file_path = file_path
-        if id == None:
+        if id is None:
             self._get_id_from_fp()
         else:
             self.id = id
 
-        if parameters == None:
+        if parameters is None:
             self.parameters = default_parameters
         else:
             self.parameters = parameters
 
-        if injection_order != None:
+        if injection_order is not None:
             self._injection_order = int(injection_order)
         else:
             warnings.warn("Injection order information is required if you want to use outlier detection!")
 
         self.polarity = polarity
         self._load_from_file()
-
 
     def _get_id_from_fp(self):
         self.id = os.path.splitext(os.path.basename(self.file_path))[0]
@@ -78,6 +78,7 @@ class Spectrum(object):
         :return:
         '''
         warnings.warn("This is currently in development...")
+
         def _WhittakerSmooth(intensities_copy, ones):
             intensities_copy = np.matrix(intensities_copy)
             diag_eye = eye(intensities_copy.size, format="csc")
@@ -87,7 +88,6 @@ class Spectrum(object):
             csc_A = csc_matrix(sparse + (lambda_ * diag.T * diag))
             csc_B = csc_matrix(sparse * intensities_copy.T)
             return np.array(spsolve(csc_A, csc_B))
-
 
         def _AirPLS():
             intensities_copy = self.intensities
@@ -104,8 +104,7 @@ class Spectrum(object):
                 ones[-1] = ones[0]
             return smoothed_intensities
 
-
-        if self._baseline_corrected == True:
+        if self._baseline_corrected is True:
             warnings.warn("It seems like this spectrum has already been baseline corrected!")
 
         calculated_baseline = _AirPLS()
@@ -113,24 +112,22 @@ class Spectrum(object):
         baseline_corrected_intensities = []
         baseline_corrected_masses = []
 
-
-
         for index, intensity in enumerate(self.intensities - calculated_baseline):
             if intensity > 0:
                 baseline_corrected_intensities.append(intensity)
                 baseline_corrected_masses.append(self.masses[index])
 
-        baseline_corrected_intensities = np.array(baseline_corrected_intensities)
+        baseline_corrected_intensities = np.array(baseline_corrected4_intensities)
         baseline_corrected_masses = np.array(baseline_corrected_masses)
 
-        if inplace == True:
+        if inplace is True:
             self.intensities = baseline_corrected_intensities
             self.masses = baseline_corrected_masses
             self._baseline_corrected = True
         else:
             return baseline_corrected_masses, baseline_corrected_intensities
 
-    def normalise(self, method="tic", inplace=True):
+    def _normalise(self, method="tic", inplace=True):
         '''
 
         :param method:
@@ -138,7 +135,7 @@ class Spectrum(object):
         :return:
         '''
 
-        if self._normalised == True:
+        if self._normalised is True:
             warnings.warn("It looks like you've already normalsied this spectrum!")
 
         if method.upper() == "TIC":
@@ -150,14 +147,14 @@ class Spectrum(object):
             normalised_intensities = np.array([x-median_intensity for x in self.intensities])
         else:
             normalised_intensities = self.intensities
-        if inplace == True:
+        if inplace is True:
             self.intensities = normalised_intensities
             self._normalised = True
 
         else:
             return normalised_intensities
 
-    def transform(self, method="log10", inplace=True):
+    def _transform(self, method="log10", inplace=True):
         '''
 
         :param method:
@@ -165,7 +162,7 @@ class Spectrum(object):
         :return:
         '''
 
-        if self._transformed == True:
+        if self._transformed is True:
             warnings.warn("It looks like you've already transformed this spectrum!")
 
         if method.upper() == "LOG10":
@@ -178,7 +175,7 @@ class Spectrum(object):
             transformed_intensities = np.log2(self.intensities)
         else:
             transformed_intensities = self.intensities
-        if inplace == True:
+        if inplace is True:
             self.intensities = transformed_intensities
             self._transformed = True
         else:
@@ -208,7 +205,6 @@ class Spectrum(object):
                     polarity_scans.append(scan_number)
             return polarity_scans
 
-
         def __return_apex(polarity_scans):
             reader = pymzml.run.Reader(self.file_path,
                                        MSn_Precision=self.parameters["MSn Precision"],
@@ -237,7 +233,6 @@ class Spectrum(object):
                 if scan_number in scans:
                     self.__raw_spectrum += scan
 
-
             if self.parameters["Peak Type"] == "centroided":
                 spectrum = [[m, i] for m, i in self.__raw_spectrum.centroidedPeaks]
             elif self.parameters["Peak Type"] == "reprofiled":
@@ -265,14 +260,12 @@ class Spectrum(object):
         plt.xlabel("Mass-to-ion (m/z)")
         plt.ylim(0, max(self.intensities))
         plt.ylabel("Intensity")
-        plt.show()
-        plt.clf()
 
         if xlim == []:
             xlim = [min(self.masses), max(self.masses)]
             plt.ylim(0, max(self.intensities))
         plt.xlim(xlim)
-        if scaled == False:
+        if scaled is False:
             plt.ylim(0, max(self.intensities))
             plt.plot(self.masses, self.intensities)
             plt.ylabel("Intensity")
@@ -281,7 +274,8 @@ class Spectrum(object):
             plt.plot(self.masses, scaled_intensities)
             plt.ylim(0, max(scaled_intensities))
             plt.ylabel("Scaled Intensity")
-        if file_path != None:
+        plt.tight_layout()
+        if file_path is not None:
             plt.savefig(file_path)
         else:
             plt.show()
