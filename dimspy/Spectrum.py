@@ -38,7 +38,7 @@ class Spectrum(object):
 
     __raw_spectrum = None
 
-    def __init__(self, file_path, id=None, polarity=None, parameters=None, injection_order=None):
+    def __init__(self, file_path=None, id=None, polarity=None, parameters=None, injection_order=None):
         '''
         :param file_path: path to mzML file.
         :param id: unique identifier for the sample, if blank reverts to filename.
@@ -62,7 +62,8 @@ class Spectrum(object):
             warnings.warn("Injection order information is required if you want to use outlier detection!")
 
         self.polarity = polarity
-        self._load_from_file()
+        if self.file_path != None:
+            self._load_from_file()
         self._normalised = False
         self._transformed = False
         self._baseline_corrected = False
@@ -141,10 +142,10 @@ class Spectrum(object):
         if self._normalised is False:
             if method.upper() == "TIC":
                 sum_intensity = np.nansum(self.intensities)
-                normalised_intensities = np.array([(x / sum_intensity) for x in self.intensities])
+                normalised_intensities = np.array([(x / sum_intensity) for x in self.intensities])*1000
             elif method.upper() == "MEDIAN":
                 median_intensity = np.nanmedian(self.intensities)
-                normalised_intensities = np.array([x-median_intensity for x in self.intensities])
+                normalised_intensities = np.array([x-median_intensity for x in self.intensities])*1000
             else:
                 normalised_intensities = self.intensities
         else:
@@ -171,8 +172,12 @@ class Spectrum(object):
                 transformed_intensities = np.log(self.intensities)
             elif method.upper() == "LOG2":
                 transformed_intensities = np.log2(self.intensities)
+            elif method.upper() == "GLOG":
+                def __lognorm(x, min):
+                    return np.log2((x + np.sqrt(x**2 + min**2))/2)
+                transformed_intensities = __lognorm(self.intensities, min(self.intensities)/10)
             else:
-                transformed_intensities = self.intensities
+                pass
         else:
             warnings.warn("Warning: %s already normalised, ignoring" % self.id)
             transformed_intensities = self.intensities

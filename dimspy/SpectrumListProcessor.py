@@ -130,6 +130,11 @@ class SpectrumListProcessor(object):
         else:
             warnings.warn("Non inplace binning yet to be implemented")
 
+
+    '''
+
+        Needs to be rewritten to be samples specific.
+    '''
     def scale(self, method="MC", inplace=True, n_jobs=1):
         def _mean_center(spectrum):
             mean_intensity = np.nanmean(spectrum.intensities)
@@ -197,7 +202,7 @@ class SpectrumListProcessor(object):
 
         def _value_imputation(df):
             if method.upper() == "KNN":
-                imp = Imputer(axis=0)
+                imp = Imputer(axis=1)
                 imputated = imp.fit_transform(df)
                 df = pd.DataFrame(
                     imputated, columns=df.columns, index=df.index)
