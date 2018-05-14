@@ -29,6 +29,7 @@ class Spectrum(object):
 
     _normalised = False
     _transformed = False
+    _scaled = False
     _baseline_corrected = False
 
     _injection_order = None
@@ -67,6 +68,7 @@ class Spectrum(object):
         self._normalised = False
         self._transformed = False
         self._baseline_corrected = False
+        self._scaled = False
 
     def _get_id_from_fp(self):
         self.id = os.path.splitext(os.path.basename(self.file_path))[0]
@@ -130,6 +132,10 @@ class Spectrum(object):
             self._baseline_corrected = True
         else:
             return baseline_corrected_masses, baseline_corrected_intensities
+
+
+
+    
 
     def _normalise(self, method="tic"):
         '''

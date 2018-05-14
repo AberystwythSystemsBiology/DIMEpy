@@ -131,52 +131,34 @@ class SpectrumListProcessor(object):
             warnings.warn("Non inplace binning yet to be implemented")
 
 
-    '''
+    def scale(self, method="mc", inplace=True):
+        def __mean_center(_i):
+            return _i - np.mean(_i)
 
-        Needs to be rewritten to be samples specific.
-    '''
-    def scale(self, method="MC", inplace=True, n_jobs=1):
-        def _mean_center(spectrum):
-            mean_intensity = np.nanmean(spectrum.intensities)
-            return np.array([x - mean_intensity for x in spectrum.intensities])
+        def __pareto(_i):
+            return __mean_center(_i) / np.sqrt(np.std(_i, dtype=np.float64))
 
-        def _scaler(data):
-            spectrum, method = data
-            mean_centered = _mean_center(spectrum)
-            if method.upper() == "AUTO":
-                variance = np.var(mean_centered)
-                scaled_intensities = np.array(
-                    [x / variance for x in mean_centered])
-            elif method.upper() == "RANGE":
-                r = np.nanmax(spectrum.intensities) - \
-                    np.nanmin(spectrum.intensities)
-                scaled_intensities = np.array([x / r for x in mean_centered])
-            elif method.upper() == "PARETO":
-                pareto = np.std(spectrum.intensities)**(1 / 2)
-                scaled_intensities = np.array(
-                    [x / pareto for x in mean_centered])
-            elif method.upper() == "MC":
-                scaled_intensities = mean_centered
-            return scaled_intensities, spectrum.id
+        def __range(_i):
+            return __mean_center(_i) / (np.max(_i)-np.min(_i))
 
-        pool = multiprocess.Pool(n_jobs)
+        def __auto(_i):
+            return __mean_center(_i) / np.std(_i)
 
-        scaled_spectrum = pool.map_async(_scaler, [[spectrum, method] for spectrum in
-                                                   self.to_list()])
-        scaled_spectrum = scaled_spectrum.get()
+        if self._scaled != True:
+            df = self.to_spectrumlist().flatten_to_dataframe()
+            for mass in df:
+                intensities = df[mass].values
+                if method.upper() == "MEAN":
+                    scaled_intensities = __mean_center(intensities)
+                elif method.upper() == "RANGE":
+                    scaled_intensities = __range(intensities)
+                elif method.upper() == "AUTO":
+                    scaled_intensities = __auto(intensities)
+                elif method.upper() == "PARETO":
+                    scaled_intensities = __pareto(intensities)
+                df[mass] = scaled_intensities
 
-        pool.close()
-        pool.join()
-
-        for result in scaled_spectrum:
-            scaled_intensities, id = result
-            if inplace is True:
-                for spectrum in self.to_list():
-                    if spectrum.id == id:
-                        spectrum.intensities = scaled_intensities
-                self._scaled = True
-            else:
-                warnings.warn("Non-inplace centering not implemented!")
+            self.pandas_to_spectrum(df)
 
     def normalise(self, method="tic"):
         for spectrum in self.to_list():
