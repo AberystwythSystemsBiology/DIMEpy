@@ -12,6 +12,16 @@ High-throughput, nontargeted metabolite fingerprinting using nominal mass flow i
 Beckmann, et al. (2008) - doi:10.1038/nprot.2007.500
 ```
 
+## Installation
+
+## Bug reporting
+
+Please report all bugs you find in the issues tracker. We would welcome all sorts of contribution, so please be as candid as you want.
+
+## Contributors
+
+* Keiron O'Shea (keo7@aber.ac.uk)
+
 ## Usage
 
 The following script takes a path containing mzML files, processes them following the Beckmann, et al protocol and exports the result to an Excel file.
@@ -51,11 +61,10 @@ for polarity in ["negative", "positive"]:
         # Read a mzML file from a given directory, and process it using given parameters.
         spectrum = dimepy.Spectrum(file_path=os.path.join(mzMLpaths, file),
                                    polarity=polarity, parameters=parameters)
-        # Applying log10 transformation.
-        spectrum.transform()
         # Applying TIC normalisation
-        spectrum.normalise()
-
+        spectrum.normalise(method="tic")
+        # Applying generalised log transformation.
+        spectrum.transform(method="glog")
         # Adding the processed spectrum to the spectrum list.
         spectrum_list.add(spectrum)
 
@@ -63,17 +72,17 @@ for polarity in ["negative", "positive"]:
     # Create a spectrum list processor.
     processor = dimepy.SpectrumListProcessor(spectrum_list)
 
-
     # Apply MAD outlier detection.
     processor.outlier_detection()
 
     # Bin the spectrum to 0.25 m/z widths.
     processor.binning(bin_size=0.25)
-    # Center the spectrum.
-    processor.center()
-    # KNN value imputation and value thresholding.
-    processor.value_imputation(threshold=0.5)
 
+    # Value imputation and value thresholding.
+    processor.value_imputation(method="basic", threshold=0.5)
+
+    # Applying mass-wise pareto scaling to the spectrum list.
+    processor.scale(method="pareto")
 
     # Export the processed spectrum list back to a spectrum list object.
     processed_spectrum_list = processor.to_spectrumlist()
