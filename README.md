@@ -87,4 +87,4 @@ for polarity in ["negative", "positive"]:
 
 ## License
 
-Code licensed under the MIT license.
+Code licensed under the GNU General Public License v2.0.

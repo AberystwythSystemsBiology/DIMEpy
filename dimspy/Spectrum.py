@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import os
 import numpy as np
 import operator
@@ -7,20 +9,17 @@ from scipy.sparse.linalg import spsolve
 import warnings
 import matplotlib.pyplot as plt
 
-default_parameters = {
-    "MS1 Precision": 1e-3,
-    "MSn Precision": 1e-3,
-    "Measured Precision": 1e-3,
-    "Scan Range": "apex",
-    "Peak Type": "centroided"
-}
-
-# OBO translation.
-
-polarity_dict = {"POSITIVE": "MS:1000130", "NEGATIVE": "MS:1000129"}
-
 
 class Spectrum(object):
+    """Summary of class here.
+
+    Longer class information...
+
+    Attributes:
+        something: description of said thing.
+
+    """
+    polarity_dict = {"POSITIVE": "MS:1000130", "NEGATIVE": "MS:1000129"}
 
     _loaded = False
 
@@ -42,12 +41,18 @@ class Spectrum(object):
                  polarity=None,
                  parameters=None,
                  injection_order=None):
-        '''
-        :param file_path: path to mzML file.
-        :param id: unique identifier for the sample, if blank reverts to filename.
-        :param polarity: chosen polarity for inspection.
-        :param parameters: dictonary of spectrum parameters.
-        '''
+        """Inits a Spectrum.
+
+        Forms a Spectrum object, contained masses and intensities..
+
+        Args:
+            file_path:
+            id:
+            polarity:
+            parameters:
+            injection_order:
+
+        """
         self.file_path = file_path
         if id is None:
             self._get_id_from_fp()
@@ -55,7 +60,13 @@ class Spectrum(object):
             self.id = id
 
         if parameters is None:
-            self.parameters = default_parameters
+            self.parameters = {
+                "MS1 Precision": 1e-3,
+                "MSn Precision": 1e-3,
+                "Measured Precision": 1e-3,
+                "Scan Range": "apex",
+                "Peak Type": "centroided"
+            }
         else:
             self.parameters = parameters
 
@@ -75,18 +86,19 @@ class Spectrum(object):
         self._scaled = False
 
     def _get_id_from_fp(self):
+        """Description of method.
+
+        Longer description of method.
+        """
         self.id = os.path.splitext(os.path.basename(self.file_path))[0]
 
     # Over-egging the WhittakerSmoothing, need to take a look.
 
     def baseline_correction(self, inplace=True, max_iterations=2, lambda_=100):
-        '''
+        """Description of method.
 
-        :param inplace:
-        :param max_iterations:
-        :param lambda_:
-        :return:
-        '''
+        Longer description of method.
+        """
         warnings.warn("This is currently in development...")
 
         def _WhittakerSmooth(intensities_copy, ones):
