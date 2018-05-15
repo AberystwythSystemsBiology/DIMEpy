@@ -243,7 +243,7 @@ class Spectrum(object):
 
             polarity_scans = []
             for scan_number, scan in enumerate(reader):
-                if scan.get(polarity_dict[self.polarity.upper()]) != None:
+                if scan.get(self.polarity_dict[self.polarity.upper()]) != None:
                     polarity_scans.append(scan_number)
             return polarity_scans
 

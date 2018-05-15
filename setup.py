@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='dimepy',
-    version='0.0.5',
+    version='0.0.6',
     packages=['dimepy'],
     url='http://www.github.com/KeironO/dimepy',
     license='GPLv2',
