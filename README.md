@@ -14,6 +14,22 @@ Beckmann, et al. (2008) - doi:10.1038/nprot.2007.500
 
 ## Installation
 
+DIMEpy requires Python 2.7.+ and is unfortunately not compatible with Python 3.
+
+You can install it through ```pypi``` using ```pip```:
+
+```
+pip install dimepy
+```
+
+Or alternatively install it manually using ```git```:
+
+```
+git clone https://www.github.com/KeironO/DIMEpy
+cd DIMEpy
+python setup.py install
+```
+
 ## Bug reporting
 
 Please report all bugs you find in the issues tracker. We would welcome all sorts of contribution, so please be as candid as you want.
