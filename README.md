@@ -1,4 +1,4 @@
-# DIMEpy: Direct Infusion MEtablomics pRocessing
+# DIMEpy: Direct Infusion MEtablomics (DIME) Processing in Pythone
 
 **HERE BE DRAGONS:** This project is largely undocumented and untested, I do aim on sorting it all out eventually.
 
