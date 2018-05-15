@@ -8,5 +8,15 @@ setup(
     license='GPLv2',
     author='Keiron O\'Shea',
     author_email = 'keo7@aber.ac.uk',
-    description = 'Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry.'
+    description = 'Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry.',
+    classifiers=[
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Development Status :: 2 - Pre-Alpha',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'License :: OSI Approved :: GPLv2',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: Developers'
+    ]
 )
