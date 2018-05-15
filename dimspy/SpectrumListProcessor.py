@@ -12,7 +12,6 @@ from sklearn.preprocessing import Imputer
 
 
 class SpectrumListProcessor(object):
-
     def __init__(self, spectrum_list):
         '''
 
@@ -37,7 +36,11 @@ class SpectrumListProcessor(object):
         '''
         self.spectrum_list.remove(spectrum)
 
-    def outlier_detection(self, mad_threshold=3, inplace=True, plot=False, results_path=None):
+    def outlier_detection(self,
+                          mad_threshold=3,
+                          inplace=True,
+                          plot=False,
+                          results_path=None):
         '''
 
         :param mad_threshold:
@@ -53,8 +56,10 @@ class SpectrumListProcessor(object):
         mean_abs_dev = np.nanmean([abs(x - mean_tic) for x in tics])
         ad_f_m = [abs((x - mean_tic) / mean_abs_dev) for x in tics]
 
-        outlier_spectrum = [s for i, s in enumerate(
-            self.to_list()) if ad_f_m[i] > mad_threshold]
+        outlier_spectrum = [
+            s for i, s in enumerate(self.to_list())
+            if ad_f_m[i] > mad_threshold
+        ]
 
         if inplace is True:
             [self.remove(x) for x in outlier_spectrum]
@@ -68,12 +73,18 @@ class SpectrumListProcessor(object):
             plt.figure()
             plt.xlabel("Injection Order")
             plt.ylabel("Total Ion Count (TIC)")
-            plt.scatter([x._injection_order for x in self.to_list()],
-                        [sum(x.intensities) for x in self.to_list()],
-                        marker="o", color="b", label="Passed")
-            plt.scatter([x._injection_order for x in outlier_spectrum],
-                        [sum(x.intensities) for x in outlier_spectrum],
-                        marker="x", color="r", label="Outliers")
+            plt.scatter(
+                [x._injection_order for x in self.to_list()],
+                [sum(x.intensities) for x in self.to_list()],
+                marker="o",
+                color="b",
+                label="Passed")
+            plt.scatter(
+                [x._injection_order for x in outlier_spectrum],
+                [sum(x.intensities) for x in outlier_spectrum],
+                marker="x",
+                color="r",
+                label="Outliers")
             plt.legend(loc="upper right", numpoints=1)
             plt.show()
 
@@ -86,7 +97,10 @@ class SpectrumListProcessor(object):
         :param n_jobs:
         :return:
         '''
-        bins = np.arange(round(self.mass_range[0]), round(self.mass_range[1]), step=bin_size)
+        bins = np.arange(
+            round(self.mass_range[0]),
+            round(self.mass_range[1]),
+            step=bin_size)
 
         def _make_bins():
             binned_masses = {b: [] for b in bins}
@@ -94,23 +108,24 @@ class SpectrumListProcessor(object):
             for spectrum in self.to_list():
                 for b in bins:
                     for m in spectrum.masses:
-                        if m >= b and m < b+bin_size:
+                        if m >= b and m < b + bin_size:
                             binned_masses[b].append(m)
             return binned_masses
 
         def _bin(spectrum):
 
-            b_i, b_m, b_n = sc_stats.binned_statistic(spectrum.masses,
-                                                    spectrum.intensities,
-                                                    bins=bins,
-                                                    statistic=statistic)
+            b_i, b_m, b_n = sc_stats.binned_statistic(
+                spectrum.masses,
+                spectrum.intensities,
+                bins=bins,
+                statistic=statistic)
             return b_m[:-1], b_i, spectrum.id
 
         bin_dicts = _make_bins()
         for idx, b in enumerate(bins):
             values = bin_dicts[b]
             if len(values) > 0:
-                bins[idx] = sum(values)/len(values)
+                bins[idx] = sum(values) / len(values)
 
         pool = multiprocess.Pool(n_jobs)
         binned_spectra = pool.map_async(
@@ -130,7 +145,6 @@ class SpectrumListProcessor(object):
         else:
             warnings.warn("Non inplace binning yet to be implemented")
 
-
     def scale(self, method="mc", inplace=True):
         def __mean_center(_i):
             return _i - np.mean(_i)
@@ -139,7 +153,7 @@ class SpectrumListProcessor(object):
             return __mean_center(_i) / np.sqrt(np.std(_i, dtype=np.float64))
 
         def __range(_i):
-            return __mean_center(_i) / (np.max(_i)-np.min(_i))
+            return __mean_center(_i) / (np.max(_i) - np.min(_i))
 
         def __auto(_i):
             return __mean_center(_i) / np.std(_i)
@@ -176,11 +190,14 @@ class SpectrumListProcessor(object):
         :param inplace:
         :return:
         '''
+
         def _remove_bins_by_threshold():
             df = self.spectrum_list.flatten_to_dataframe()
+
             nc = df.isnull().sum()
-            df = df[nc[nc < (len(df.index.values) * threshold)].index.values]
-            return df
+            _threshold = len(df.index.values) * threshold
+            nc = nc[nc <= _threshold]
+            return df[nc.index.values]
 
         def _value_imputation(df):
             if method.upper() == "KNN":
@@ -204,8 +221,8 @@ class SpectrumListProcessor(object):
             return df
 
         if method.upper() == "ALL":
-            df = self.spectrum_list.flatten_to_dataframe()
-            df = df.loc[:, df.isnull().mean() < 1]
+            threshold = 0
+            df = _remove_bins_by_threshold()
         else:
             df = _remove_bins_by_threshold()
             df = _value_imputation(df)

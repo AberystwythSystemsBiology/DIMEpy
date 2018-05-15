@@ -1,4 +1,3 @@
-
 import pandas as pd
 import cPickle as pkl
 import collections
@@ -7,14 +6,12 @@ import numpy as np
 
 
 class SpectrumList(object):
-
     def __init__(self, _spectrum=[]):
         '''
 
         :param _spectrum:
         '''
         self.__spectrum = _spectrum
-
 
     def append(self, Spectrum):
         '''
@@ -52,7 +49,8 @@ class SpectrumList(object):
         for spectrum in self.__spectrum:
             raw_values.append([spectrum.id] + spectrum.masses.tolist())
             raw_values.append([" "] + spectrum.intensities.tolist())
-        raw_values = pd.DataFrame(raw_values).T.replace(np.nan, "", regex=True).values
+        raw_values = pd.DataFrame(raw_values).T.replace(
+            np.nan, "", regex=True).values
 
         with open(file_path, "wb") as output:
             writer = csv.writer(output, delimiter=delimiter)
