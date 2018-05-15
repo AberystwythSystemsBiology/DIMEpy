@@ -1,8 +1,8 @@
-# dimspy
+# DIMEpy: Direct Infusion MEtablomics pRocessing
 
 **HERE BE DRAGONS:** This project is largely undocumented and untested, I do aim on sorting it all out eventually.
 
-Simple Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry from ```mzML``` files.
+Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry from ```mzML``` files.
 
 Implementation of the methods detailed in:
 
@@ -21,7 +21,7 @@ The following script takes a path containing mzML files, processes them followin
 
 # Importing modules required to run this script.
 
-import dimspy
+import dimepy
 import os
 
 
@@ -45,11 +45,11 @@ parameters = {
 # Object to store processed spectrum.
 
 for polarity in ["negative", "positive"]:
-    spectrum_list = dimspy.SpectrumList()
+    spectrum_list = dimepy.SpectrumList()
 
     for index, file in enumerate(os.listdir(mzMLpaths)):
         # Read a mzML file from a given directory, and process it using given parameters.
-        spectrum = dimspy.Spectrum(file_path=os.path.join(mzMLpaths, file),
+        spectrum = dimepy.Spectrum(file_path=os.path.join(mzMLpaths, file),
                                    polarity=polarity, parameters=parameters)
         # Applying log10 transformation.
         spectrum.transform()
@@ -61,7 +61,7 @@ for polarity in ["negative", "positive"]:
 
 
     # Create a spectrum list processor.
-    processor = dimspy.SpectrumListProcessor(spectrum_list)
+    processor = dimepy.SpectrumListProcessor(spectrum_list)
 
 
     # Apply MAD outlier detection.
@@ -87,4 +87,4 @@ for polarity in ["negative", "positive"]:
 
 ## License
 
-Code licensed under the GNU General Public License v2.0.
+DIMEpy is licensed under the GNU General Public License v2.0.
