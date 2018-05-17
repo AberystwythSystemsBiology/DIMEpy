@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+from copy import copy
 import numpy as np
 import operator
 import pymzml
@@ -39,7 +40,12 @@ class Spectrum(object):
                  file_path=None,
                  id=None,
                  polarity=None,
-                 parameters=None,
+                 type="peaks",
+                 min_mz=50.0,
+                 max_mz=5000,
+                 apex=False,
+                 snr_estimator="median",
+                 max_snr=2.5,
                  injection_order=None):
         """Inits a Spectrum.
 
@@ -49,7 +55,8 @@ class Spectrum(object):
             file_path:
             id:
             polarity:
-            parameters:
+            type:
+            apex:
             injection_order:
 
         """
@@ -59,24 +66,16 @@ class Spectrum(object):
         else:
             self.id = id
 
-        if parameters is None:
-            self.parameters = {
-                "MS1 Precision": 1e-3,
-                "MSn Precision": 1e-3,
-                "Measured Precision": 1e-3,
-                "Scan Range": "apex",
-                "Peak Type": "centroided"
-            }
-        else:
-            self.parameters = parameters
-
         if injection_order is not None:
             self._injection_order = int(injection_order)
         else:
-            warnings.warn(
-                "Injection order information is required if you want to use outlier detection!"
-            )
-
+            self._injection_order = 0
+        self.apex = apex
+        self.max_snr = max_snr
+        self.snr_estimator = snr_estimator
+        self.type = type
+        self.min_mz = min_mz
+        self.max_mz = max_mz
         self.polarity = polarity
         if self.file_path != None:
             self._load_from_file()
@@ -225,77 +224,69 @@ class Spectrum(object):
             return transformed_intensities
 
     def _load_from_file(self):
+        def __from_mzml():
+            def __gen_reader():
+                return pymzml.run.Reader(
+                    self.file_path,
+                    extraAccessions=[["MS:1000129", ["value"]],
+                                     ["MS:1000130", ["value"]]])
+
+            def __get_scans_of_interest():
+                reader = __gen_reader()
+                scans = []
+                for scan_number, scan in enumerate(reader):
+                    if self.polarity != None:
+                        if scan.get(self.polarity_dict[self.polarity.upper()]
+                                    ) != None:
+                            scans.append(scan_number)
+                    else:
+                        scans.append(scan_number)
+
+                reader = __gen_reader()
+                if self.apex == True:
+                    tics = []
+                    for scan_number, scan in enumerate(reader):
+                        tic = sum(zip(*scan.peaks)[1])
+                        tics.append([scan_number, tic])
+                    mad = np.mean(np.absolute(zip(*tics)[0] - np.mean(zip(*tics)[0])))
+                    scans = [tics[i][0] for i, x in enumerate(zip(*tics)[1]) if x > mad]
+                return scans
+
+            scan_range = __get_scans_of_interest()
+            masses = []
+            intensities = []
+
+            reader = __gen_reader()
+
+            for scan_number, scan in enumerate(reader):
+                m, ints = zip(*scan.peaks)
+                # TODO: This but better.
+                nm, nints = [], []
+                for indx, mass in enumerate(m):
+                    if mass > self.min_mz and mass < self.max_mz:
+                        nm.append(mass)
+                        nints.append(ints[indx])
+                m, ints = nm, nints
+
+
+                if self.snr_estimator != None:
+                    sn_r = np.divide(ints, scan.estimatedNoiseLevel(mode=self.snr_estimator))
+                    gq = [i for i, e in enumerate(sn_r) if e < self.max_snr]
+                    m = np.array(m)[gq]
+                    ints = np.array(ints)[gq]
+                masses.extend(m)
+                intensities.extend(ints)
+
+            self.masses, self.intensities = zip(*sorted(zip(masses, intensities)))
+
         if self.file_path.upper().endswith("MZML"):
-            self._from_mzml()
+            __from_mzml()
         elif self.file_path.upper().endswith("CSV"):
             print "CSV not implemented"
         elif self.file_path.upper().endswith("PKL"):
             print "PKL not implemented"
         else:
             raise Exception()
-
-    def _from_mzml(self):
-        def __polarity():
-            reader = pymzml.run.Reader(
-                self.file_path,
-                extraAccessions=[["MS:1000129", ["value"]],
-                                 ["MS:1000130", ["value"]]])
-
-            polarity_scans = []
-            for scan_number, scan in enumerate(reader):
-                if scan.get(self.polarity_dict[self.polarity.upper()]) != None:
-                    polarity_scans.append(scan_number)
-            return polarity_scans
-
-        def __return_apex(polarity_scans):
-            reader = pymzml.run.Reader(
-                self.file_path,
-                MSn_Precision=self.parameters["MSn Precision"],
-                MS1_Precision=self.parameters["MS1 Precision"])
-            tic_scans = []
-            for scan_number, scan in enumerate(reader):
-                if scan_number in polarity_scans:
-                    tic_scans.append([scan["total ion current"], scan_number])
-            tics = [x[0] for x in tic_scans]
-            mad = np.mean(np.absolute(tics - np.mean(tics))) * 3
-
-            __get_spectrum([x[1] for x in tic_scans if x[0] > mad])
-
-        def __get_spectrum(scans):
-            reader = pymzml.run.Reader(
-                self.file_path,
-                MS1_Precision=self.parameters["MS1 Precision"],
-                MSn_Precision=self.parameters["MSn Precision"])
-
-            self.__raw_spectrum = pymzml.spec.Spectrum(
-                measuredPrecision=self.parameters["Measured Precision"])
-
-            for scan_number, scan in enumerate(reader):
-                if scan_number in scans:
-                    self.__raw_spectrum += scan
-
-            if self.parameters["Peak Type"] == "centroided":
-                spectrum = [[m, i]
-                            for m, i in self.__raw_spectrum.centroidedPeaks]
-            elif self.parameters["Peak Type"] == "reprofiled":
-                spectrum = [[m, i]
-                            for m, i in self.__raw_spectrum.reprofiledPeaks]
-            else:
-                spectrum = [[m, i] for m, i in self.__raw_spectrum.peaks]
-
-            spectrum = sorted(spectrum, key=operator.itemgetter(0))
-
-            self.masses = np.array([x[0] for x in spectrum])
-            self.intensities = np.array([x[1] for x in spectrum])
-
-            self._loaded = True
-
-        polarity_scans = __polarity()
-
-        if self.parameters["Scan Range"] == "apex":
-            __return_apex(polarity_scans)
-        else:
-            __get_spectrum(polarity_scans)
 
     def plot(self, show=True, xlim=[], scaled=False, file_path=None):
         plt.figure()
