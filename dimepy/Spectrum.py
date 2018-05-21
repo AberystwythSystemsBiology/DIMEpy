@@ -286,7 +286,9 @@ class Spectrum(object):
                             intensities.extend(ints)
 
                 masses, intensities = zip(*sorted(zip(masses, intensities)))
-                return masses, intensities
+                masses, intensities = np.array(masses), np.array(intensities)
+                non_z = [intensities != 0]
+                return masses[non_z], intensities[non_z]
 
             scan_range = __get_scans_of_interest()
             self.masses, self.intensities = __get_scan(scan_range)

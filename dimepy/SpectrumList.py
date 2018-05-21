@@ -46,6 +46,7 @@ class SpectrumList(object):
         :return:
         '''
         raw_values = []
+
         for spectrum in self.__spectrum:
             raw_values.append([spectrum.id] + spectrum.masses.tolist())
             raw_values.append([" "] + spectrum.intensities.tolist())
