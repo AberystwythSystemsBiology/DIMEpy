@@ -44,6 +44,7 @@ class Spectrum(object):
                  min_mz=50.0,
                  max_mz=5000,
                  apex=False,
+                 apex_mad=2,
                  snr_estimator="median",
                  max_snr=2.5,
                  injection_order=None):
@@ -71,6 +72,7 @@ class Spectrum(object):
         else:
             self._injection_order = 0
         self.apex = apex
+        self.apex_mad = apex_mad
         self.max_snr = max_snr
         self.snr_estimator = snr_estimator
         self.type = type
@@ -257,7 +259,7 @@ class Spectrum(object):
                     # I've noticed that some profiles have a strange overflow at the end
                     # of the run, so I will look for those here...
                     peak_range_mad =  np.mean(np.absolute(zip(*peak_scans)[0] - np.mean(zip(*peak_scans)[0])))
-                    peak_scans = [x for x in peak_scans if x[0] < 2*(peak_range_mad)]
+                    peak_scans = [x for x in peak_scans if x[0] < self.apex_mad*(peak_range_mad)]
                     scans = [x[0] for x in peak_scans]
                     # TODO: Background subtraction.
                 return scans
