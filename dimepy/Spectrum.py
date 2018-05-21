@@ -255,13 +255,13 @@ class Spectrum(object):
                             tic = sum(zip(*scan.peaks)[1])
                             tics.append([scan_number, tic])
                     mad = np.mean(np.absolute(zip(*tics)[1] - np.mean(zip(*tics)[1])))
-                    peak_scans = [x for x in tics if x[1] > (3*mad)]
+
+                    peak_scans = [x for x in tics if x[1] > (self.apex_mad*mad)]
                     # I've noticed that some profiles have a strange overflow at the end
-                    # of the run, so I will look for those here...
+                    # of the run, so I will look for those and discard here.
                     peak_range_mad =  np.mean(np.absolute(zip(*peak_scans)[0] - np.mean(zip(*peak_scans)[0])))
-                    peak_scans = [x for x in peak_scans if x[0] < self.apex_mad*(peak_range_mad)]
-                    scans = [x[0] for x in peak_scans]
-                    # TODO: Background subtraction.
+                    scans = [x[0] for x in peak_scans if x[0] > peak_range_mad]
+
                 return scans
 
 
