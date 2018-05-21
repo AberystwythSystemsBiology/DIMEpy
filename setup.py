@@ -5,7 +5,7 @@ except ImportError:
 
 try:
     import pypandoc
-    long_description = pypandoc.convert("README.md", ".rst")
+    long_description = pypandoc.convert("README.md", "rst")
 except (IOError, ImportError):
     long_description=open("README.md").read()
 
@@ -13,7 +13,7 @@ except (IOError, ImportError):
 
 setup(
     name='dimepy',
-    version='0.0.8',
+    version='0.0.9',
     url='http://www.github.com/KeironO/dimepy',
     license='GPLv2',
     packages=find_packages(),
