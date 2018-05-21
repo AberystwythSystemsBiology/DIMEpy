@@ -1,16 +1,14 @@
 from distutils.core import setup
-import setuptools
 import dimepy
 import sys
 
 setup(
     name='dimepy',
-    version='0.0.6',
+    version='0.0.7',
     packages=['dimepy'],
     url='http://www.github.com/KeironO/dimepy',
     license='GPLv2',
     platforms=['Windows', 'UNIX'],
-    packages=setuptools.find_packages(),
     install_requires=open('requirements.txt').read().splitlines(),
     long_description=open('README.md').read(),
     author='Keiron O\'Shea',
