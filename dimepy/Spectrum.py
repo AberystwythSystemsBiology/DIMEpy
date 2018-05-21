@@ -91,172 +91,6 @@ class Spectrum(object):
         """
         self.id = os.path.splitext(os.path.basename(self.file_path))[0]
 
-    # Over-egging the WhittakerSmoothing, need to take a look.
-
-
-    def align(self, ppm=2.0, edge_extend=10):
-        from scipy.cluster import hierarchy
-        from scipy.spatial import distance
-        # ppm: the hierarchical clustering cutting height, i.e., ppm range for each aligned mz value. Default = 2.0
-        # ppm range for the edge blocks. Default = 10
-
-        # multiprocess cluster
-        def _cluster_peaks_mp(params):
-            return _cluster_peaks(*params)
-
-
-        # single cluster
-        def _cluster_peaks(mzs, ppm, distype='euclidean', linkmode='centroid'):
-            if len(mzs) == 0:
-                return np.array([])
-            if len(mzs) == 1:
-                return np.zeros_like(mzs, dtype=int).reshape((-1, 1))
-
-            m = np.column_stack([mzs])
-            mdist = distance.pdist(m, metric=distype)
-            outer_mzs = np.add.outer(mzs, mzs)
-            np.fill_diagonal(outer_mzs, 0)
-            avg_mz_pair = np.divide(outer_mzs, 2)
-            mdist_mz_pair = distance.squareform(avg_mz_pair)
-            relative_errors = np.multiply(mdist_mz_pair, 1e-6)
-
-            with np.errstate(divide='ignore', invalid='ignore'):  # using errstate context to avoid seterr side effects
-                m_mass_tol = np.divide(mdist, relative_errors)
-                m_mass_tol[np.isnan(m_mass_tol)] = 0.0
-            z = hierarchy.linkage(m_mass_tol)
-
-            # cut tree at ppm threshold & order matches the order of mzs
-            return hierarchy.cut_tree(z, height=ppm)
-
-        def _cluster_peaks_map(block_size=1000, fixed_block=True, ncpus=1):
-            mzs = np.array(self.masses)
-
-            if not np.all(mzs[1:] >= mzs[:-1]):
-                raise ValueError('mz values not in ascending order')
-            if not 1 <= block_size <= len(mzs):
-                # logging.warning('block size (%d) not in range [1, #peaks (%d)]' % (block_size, len(mzs)))
-                block_size = min(max(block_size, 1), len(mzs))
-
-            # split blocks
-            if fixed_block:
-                sids = range(block_size, len(mzs), block_size)
-            else:
-                umzs, urids = np.unique(mzs, return_index=True)
-                sids = [urids[i] for i in range(block_size, len(umzs), block_size)]  # appx size
-            if len(sids) > 0 and sids[-1] == len(mzs) - 1:
-                sids = sids[:-1]  # no need to cluster the final peak separately
-
-            # create mapping pool
-            def _mmap(f, p):
-                ppool = Pool(cpu_count() - 1 if ncpus is None else ncpus)
-                rets = ppool.map(f, p)
-                ppool.close()  # close after parallel finished
-                return rets
-
-            def _smap(f, p):
-                return map(f, p)
-
-            def _pmap(f, p):
-                largechk = filter(lambda x: len(x[0]) > 1E+5, p)
-                if len(largechk) > 0:
-                    raise RuntimeError('Some of the clustering chunks contain too many peaks: \n%s' %
-                        join(map(lambda x: 'mz range [%.5f - %.5f] ... [%d] peaks' % (min(x[0]),max(x[0]),len(x[0])), largechk), '\n'))
-                return (_smap if ncpus == 1 or cpu_count() <= 2 else _mmap)(f, p)
-
-            # align edges
-            eeppm = edge_extend * ppm * 1e-6
-
-            _rng = lambda x: (lambda v: np.where(np.logical_and(x - v < mzs, mzs <= x + v))[0])(eeppm * x)
-            erngs = [_rng(mzs[i]) for i in sids]
-            overlap = [p[-1] >= s[0] for p, s in zip(erngs[:-1], erngs[1:])]  # in case edges have overlap
-            if True in overlap:
-                logging.warning('[%d] edge blocks overlapped, consider increasing the block size' % (sum(overlap) + 1))
-                erngs = reduce(lambda x, y: (x[:-1] + [np.unique(np.hstack((x[-1], y[0])))]) if y[1] else x + [y[0]],
-                               zip(erngs[1:], overlap), [erngs[0]])
-                sids = [sids[0]] + [s for s, o in zip(sids[1:], overlap) if not o]
-
-            _cids = _pmap(_cluster_peaks_mp, [(mzs[r], ppm) for r in erngs])
-            eblks = [r[c == c[r == s]] for s, r, c in zip(sids, erngs, map(lambda x: x.flatten(), _cids))]
-            ecids = map(lambda x: np.zeros_like(x).reshape((-1, 1)), eblks)
-
-            # align blocks
-            # keep () in reduce in case eblks is empty
-            brngs = np.array(
-                (0,) + reduce(lambda x, y: x + y, map(lambda x: (x[0], x[-1] + 1), eblks), ()) + (len(mzs),)
-            ).reshape((-1, 2))
-
-            # in case edges have reached mz bounds
-            bkmzs = [mzs[slice(*r)] for r in brngs]
-            slimbk = map(lambda x: len(x) == 0 or abs(x[-1] - x[0]) / x[0] < eeppm * 10, bkmzs)
-            if np.sum(slimbk) > 0:
-                pbrngs = [map(lambda x: min(x, len(mzs) - 1), (r[0], r[-1] - 1 if r[-1] != r[0] else r[-1])) for r in brngs]
-                pblns = ['block %d' % i + ': [%f, %f]' % itemgetter(*r)(mzs)
-                         for i, (s, r) in enumerate(zip(slimbk, pbrngs)) if s]
-                logging.warning('[%d] empty / slim clustering block(s) found, consider increasing the block size\n%s' %
-                                (np.sum(slimbk), join(pblns, '\n')))
-            bcids = _pmap(_cluster_peaks_mp, [(m, ppm) for m in bkmzs])
-
-            # combine
-            cids = [None] * (len(bcids) + len(ecids))
-            cids[::2], cids[1::2] = bcids, ecids
-            return cids
-
-        def _cluster_peaks_reduce(clusters):
-            return reduce(lambda x, y: np.vstack((x, y + np.max(x) + 1)), filter(lambda x: len(x) > 0, clusters)).flatten()
-
-
-        def _align_peaks(cids, pids):
-            pids = np.array(pids)
-            # encode string id list to continuous values and search uniques
-            def _idsmap(ids):
-                _, ri, vi = np.unique(ids, return_index=True, return_inverse=True)
-                sri = np.argsort(ri)  # ensure order
-                return np.argsort(sri)[vi], ids[ri[sri]]
-
-            (mcids, mpids), (ucids, upids) = zip(*map(_idsmap, (cids, pids)))
-
-            print len(upids)
-            print len(ucids)
-            # count how many peaks from same sample being clustered into one peak
-            cM = np.zeros([99267, 54202])
-            for pos, count in Counter(zip(mpids, mcids)).items():
-                cM[pos] = count
-
-            # fill all the attributes into matrix
-            def _avg_am(a):
-                aM = np.zeros(map(len, (upids, ucids)))
-                for p, v in zip(zip(mpids, mcids), a):
-                    aM[p] += v
-                with np.errstate(divide='ignore', invalid='ignore'):
-                    aM /= cM
-                aM[np.isnan(aM)] = 0
-                return aM
-
-            def _cat_am(a):
-                aM = [[[] for _ in ucids] for _ in upids]
-                for (r, c), v in zip(zip(mpids, mcids), a):
-                    aM[r][c] += [str(v)]
-                aM = [[join(val, ',') for val in ln] for ln in aM]
-                return np.array(aM)
-
-            def _fillam(a):
-                alg = _avg_am if a.dtype.kind in ('i', 'u', 'f') else \
-                      _cat_am if a.dtype.kind in ('?', 'b', 'a', 'S', 'U') else \
-                      lambda x: logging.warning('undefined alignment behaviour for [%s] dtype data') # returns None
-                return alg(a)
-
-            attrMs = map(_fillam, attrs)
-
-            # sort mz values, ensure mzs matrix be the first
-            sortids = np.argsort(np.average(attrMs[0], axis=0, weights=attrMs[0].astype(bool)))
-            return upids, map(lambda x: x[:, sortids], attrMs + [cM])
-
-        clusters = _cluster_peaks_map()
-        cids = _cluster_peaks_reduce(clusters)
-        a_pids, a_attrms = _align_peaks(cids, self.masses)
-
-        print a_pids
-
     def baseline_correction(self, inplace=True, max_iterations=2, lambda_=100):
         """Description of method.
 
@@ -408,12 +242,23 @@ class Spectrum(object):
 
                 reader = __gen_reader()
                 if self.apex == True:
+                    '''
+                        The following method is taken from FIEmspro, with a small
+                        amount of modification for automated selection of the
+                        infusion profile scan-ranges.
+                    '''
                     tics = []
                     for scan_number, scan in enumerate(reader):
                         tic = sum(zip(*scan.peaks)[1])
                         tics.append([scan_number, tic])
-                    mad = np.mean(np.absolute(zip(*tics)[0] - np.mean(zip(*tics)[0])))
-                    scans = [tics[i][0] for i, x in enumerate(zip(*tics)[1]) if x > mad]
+                    mad = np.mean(np.absolute(zip(*tics)[1] - np.mean(zip(*tics)[1])))
+                    peak_scans = [x for x in tics if x[1] > (3*mad)]
+                    # I've noticed that some profiles have a strange overflow at the end
+                    # of the run, so I will look for those here...
+                    peak_range_mad =  np.mean(np.absolute(zip(*peak_scans)[0] - np.mean(zip(*peak_scans)[0])))
+                    peak_scans = [x for x in peak_scans if x[0] < 2*(peak_range_mad)]
+                    scans = [x[0] for x in peak_scans]
+                    # TODO: Background subtraction.
                 return scans
 
 
@@ -424,19 +269,17 @@ class Spectrum(object):
                 for scan_number, scan in enumerate(reader):
                     if scan["ms level"] != None:
                         m, ints = zip(*scan.peaks)
-                        # TODO: This but better.
-                        nm, nints = [], []
-                        for indx, mass in enumerate(m):
-                            if mass > self.min_mz and mass < self.max_mz:
-                                nm.append(mass)
-                                nints.append(ints[indx])
-                        m, ints = nm, nints
+                        m, ints = np.array(m), np.array(ints)
+                        indx = np.logical_and(np.array(m) >= self.min_mz, np.array(m) <= self.max_mz)
+                        m = m[indx]
+                        ints = ints[indx]
+
                         if len(m) > 0:
                             if self.snr_estimator != None:
                                 sn_r = np.divide(ints, scan.estimatedNoiseLevel(mode=self.snr_estimator))
-                                gq = [i for i, e in enumerate(sn_r) if e < self.max_snr]
-                                m = np.array(m)[gq]
-                                ints = np.array(ints)[gq]
+                                gq = sn_r < self.max_snr
+                                m = m[gq]
+                                ints = ints[gq]
                             masses.extend(m)
                             intensities.extend(ints)
 
@@ -444,7 +287,6 @@ class Spectrum(object):
                 return masses, intensities
 
             scan_range = __get_scans_of_interest()
-
             self.masses, self.intensities = __get_scan(scan_range)
 
 
