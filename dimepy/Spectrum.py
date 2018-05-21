@@ -249,8 +249,9 @@ class Spectrum(object):
                     '''
                     tics = []
                     for scan_number, scan in enumerate(reader):
-                        tic = sum(zip(*scan.peaks)[1])
-                        tics.append([scan_number, tic])
+                        if scan_number in scans:
+                            tic = sum(zip(*scan.peaks)[1])
+                            tics.append([scan_number, tic])
                     mad = np.mean(np.absolute(zip(*tics)[1] - np.mean(zip(*tics)[1])))
                     peak_scans = [x for x in tics if x[1] > (3*mad)]
                     # I've noticed that some profiles have a strange overflow at the end
@@ -267,13 +268,12 @@ class Spectrum(object):
                 intensities = []
                 reader = __gen_reader()
                 for scan_number, scan in enumerate(reader):
-                    if scan["ms level"] != None:
+                    if scan["ms level"] != None and scan_number in scan_range:
                         m, ints = zip(*scan.peaks)
                         m, ints = np.array(m), np.array(ints)
                         indx = np.logical_and(np.array(m) >= self.min_mz, np.array(m) <= self.max_mz)
                         m = m[indx]
                         ints = ints[indx]
-
                         if len(m) > 0:
                             if self.snr_estimator != None:
                                 sn_r = np.divide(ints, scan.estimatedNoiseLevel(mode=self.snr_estimator))
