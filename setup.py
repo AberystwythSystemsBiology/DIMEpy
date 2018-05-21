@@ -13,7 +13,7 @@ except (IOError, ImportError):
 
 setup(
     name='dimepy',
-    version='0.0.9',
+    version='0.0.9.1',
     url='http://www.github.com/KeironO/dimepy',
     license='GPLv2',
     packages=find_packages(),
