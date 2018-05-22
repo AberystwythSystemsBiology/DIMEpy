@@ -88,7 +88,7 @@ class SpectrumListProcessor(object):
             plt.legend(loc="upper right", numpoints=1)
             plt.show()
 
-    def binning(self, bin_size=0.25, statistic="mean", inplace=True, n_jobs=1):
+    def binning(self, bin_size=0.25, int_statistic="mean", mass_statistic="mean", inplace=True, n_jobs=1):
         '''
 
         :param bin_size:
@@ -104,29 +104,31 @@ class SpectrumListProcessor(object):
 
         def _make_bins():
             binned_masses = {b: [] for b in bins}
-
             for spectrum in self.to_list():
+                sm = np.array(spectrum.masses)
                 for b in bins:
-                    for m in spectrum.masses:
-                        if m >= b and m < b + bin_size:
-                            binned_masses[b].append(m)
+                    m_bins = np.logical_and(sm >= b, sm <= (b+bin_size))
+                    binned_masses[b].extend(sm[m_bins])
             return binned_masses
 
         def _bin(spectrum):
-
             b_i, b_m, b_n = sc_stats.binned_statistic(
                 spectrum.masses,
                 spectrum.intensities,
                 bins=bins,
-                statistic=statistic)
+                statistic=int_statistic)
             return b_m[:-1], b_i, spectrum.id
 
         bin_dicts = _make_bins()
+
         for idx, b in enumerate(bins):
             values = bin_dicts[b]
             if len(values) > 0:
-                bins[idx] = sum(values) / len(values)
-
+                if mass_statistic == "mean":
+                    bins[idx] = np.mean(values).tolist()
+                elif mass_statistic == "median":
+                    bins[idx] = np.median(values)
+        
         pool = multiprocess.Pool(n_jobs)
         binned_spectra = pool.map_async(
             _bin, [spectrum for spectrum in self.to_list()]).get()
