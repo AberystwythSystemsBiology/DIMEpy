@@ -260,7 +260,7 @@ class Spectrum(object):
                         if len(m) > 0:
                             if self.snr_estimator != None:
                                 sn_r = np.divide(ints, scan.estimatedNoiseLevel(mode=self.snr_estimator))
-                                gq = sn_r < self.max_snr
+                                gq = sn_r > self.max_snr
                                 m = m[gq]
                                 ints = ints[gq]
                             masses.extend(m)
