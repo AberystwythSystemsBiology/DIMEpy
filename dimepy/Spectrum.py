@@ -107,6 +107,7 @@ class Spectrum(object):
         """
 
         def bc():
+            # TODO: Pythonise this.
             x = self.intensities
             nmz = len(x)
             addini = floor(nmz%wsize/2)
@@ -132,10 +133,13 @@ class Spectrum(object):
             return bl
 
         bl = bc()
+        baseline_corrected = self.intensities-bl
         if inplace == True:
-            self.intensities = self.intensities-bl
+            indx = baseline_corrected > 0
+            self.masses = self.masses[indx]
+            self.intensities = baseline_corrected[indx]
         else:
-            return self.intensities - bl
+            return baseline_corrected
 
     def _normalise(self, method="tic"):
         '''
