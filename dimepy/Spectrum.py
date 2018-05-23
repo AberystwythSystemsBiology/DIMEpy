@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import os
+from math import floor
 from collections import defaultdict
 from copy import copy
 import numpy as np
+from scipy.stats.mstats import mquantiles
+import pandas as pd
 import operator
 import pymzml
 from scipy.sparse import csc_matrix, eye, diags
 from scipy.sparse.linalg import spsolve
+from scipy.interpolate import interp1d
 import warnings
 import matplotlib.pyplot as plt
 from operator import itemgetter
@@ -93,72 +97,45 @@ class Spectrum(object):
         """
         self.id = os.path.splitext(os.path.basename(self.file_path))[0]
 
-    def baseline_correction(self, inplace=True, max_iterations=2, lambda_=100):
+    def baseline_correction(self, wsize=50, qtl=0.1, inplace=True):
         """Description of method.
 
         Longer description of method.
+
+        - Implementation of https://github.com/aberHRML/FIEmspro
+        /blob/482e63b6fe2f6f3e203561a66372d1af21171e4a/R/onebc.R
         """
-        warnings.warn("This is currently in development...")
 
-        def _WhittakerSmooth(intensities_copy, ones):
-            intensities_copy = np.matrix(intensities_copy)
-            diag_eye = eye(intensities_copy.size, format="csc")
-            diag = diag_eye[1:] - diag_eye[:-1]
-            sparse = diags(
-                ones, 0, shape=(intensities_copy.size, intensities_copy.size))
+        def bc():
+            x = self.intensities
+            nmz = len(x)
+            addini = floor(nmz%wsize/2)
+            i = np.arange(addini+wsize, nmz-wsize, wsize)
+            i = np.insert(i, 0 , 0)
+            j = np.arange(addini+wsize, nmz-wsize, wsize)
+            j = np.append(j, nmz)
+            interv = pd.DataFrame(zip(*[i,j]))
+            interv = interv.append(interv.iloc[1:]-floor(wsize/2), ignore_index=True)
+            interv = interv.sort_values(0, ascending=True)
+            y_max = []
+            for _, k in interv.iterrows():
+                k_b = x[int(k[0]) : int(k[1])]
+                y_max.append(mquantiles(k_b, prob=qtl)[0])
+            #ymz = interv.iloc[::2, :].mean(axis=1).values
 
-            csc_A = csc_matrix(sparse + (lambda_ * diag.T * diag))
-            csc_B = csc_matrix(sparse * intensities_copy.T)
-            return np.array(spsolve(csc_A, csc_B))
+            ymz = interv.mean(axis=1).values
+            ymz = np.insert(ymz, 0, 0)
+            ymz = np.append(ymz, nmz)
+            ymax = [y_max[0]] + y_max[0:] + [y_max[len(interv.index.values)-1]]
 
-        def _AirPLS():
-            intensities_copy = self.intensities
-            ones = np.ones(self.intensities.shape[0])
-            for index in range(0, max_iterations):
-                whittaker_smoothed = _WhittakerSmooth(intensities_copy, ones)
-                smoothed_intensities = (intensities_copy - whittaker_smoothed)
-                smoothed_sum = np.abs(
-                    smoothed_intensities[smoothed_intensities < 0].sum())
-                if (smoothed_sum < 0.001 * (abs(intensities_copy)).sum()
-                        or index == max_iterations):
-                    break
-                ones[smoothed_intensities >= 0] = [0]
-                ones[smoothed_intensities < 0] = np.exp(
-                    index * (smoothed_intensities[smoothed_intensities < 0]) /
-                    smoothed_sum)
-                ones[0] = np.exp(
-                    index *
-                    (smoothed_intensities[smoothed_intensities < 0]).max() /
-                    smoothed_sum)
-                ones[-1] = ones[0]
-            return smoothed_intensities
+            bl = np.interp(self.intensities, ymz, ymax)
+            return bl
 
-        if self._baseline_corrected is True:
-            warnings.warn(
-                "It seems like this spectrum has already been baseline corrected!"
-            )
-
-        calculated_baseline = _AirPLS()
-
-        baseline_corrected_intensities = []
-        baseline_corrected_masses = []
-
-        for index, intensity in enumerate(
-                self.intensities - calculated_baseline):
-            if intensity > 0:
-                baseline_corrected_intensities.append(intensity)
-                baseline_corrected_masses.append(self.masses[index])
-
-        baseline_corrected_intensities = np.array(
-            baseline_corrected4_intensities)
-        baseline_corrected_masses = np.array(baseline_corrected_masses)
-
-        if inplace is True:
-            self.intensities = baseline_corrected_intensities
-            self.masses = baseline_corrected_masses
-            self._baseline_corrected = True
+        bl = bc()
+        if inplace == True:
+            self.intensities = self.intensities-bl
         else:
-            return baseline_corrected_masses, baseline_corrected_intensities
+            return self.intensities - bl
 
     def _normalise(self, method="tic"):
         '''
