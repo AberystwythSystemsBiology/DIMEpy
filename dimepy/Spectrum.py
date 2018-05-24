@@ -15,6 +15,8 @@ import warnings
 import matplotlib.pyplot as plt
 from operator import itemgetter
 
+np.seterr("ignore")
+
 class Spectrum(object):
     """Summary of class here.
 
@@ -237,11 +239,11 @@ class Spectrum(object):
                             tics.append([scan_number, tic])
                     mad = np.mean(np.absolute(zip(*tics)[1] - np.mean(zip(*tics)[1])))
 
-                    peak_scans = [x for x in tics if x[1] > (self.apex_mad*mad)]
+                    peak_scans = [x for x in tics if x[1] >= (self.apex_mad*mad)]
                     # I've noticed that some profiles have a strange overflow at the end
                     # of the run, so I will look for those and discard here.
                     peak_range_mad =  np.mean(np.absolute(zip(*peak_scans)[0] - np.mean(zip(*peak_scans)[0])))
-                    scans = [x[0] for x in peak_scans if x[0] > peak_range_mad]
+                    scans = [x[0] for x in peak_scans if x[0] >= peak_range_mad]
 
                 return scans
 
@@ -260,7 +262,7 @@ class Spectrum(object):
                         if len(m) > 0:
                             if self.snr_estimator != None:
                                 sn_r = np.divide(ints, scan.estimatedNoiseLevel(mode=self.snr_estimator))
-                                gq = sn_r > self.max_snr
+                                gq = sn_r >= self.max_snr
                                 m = m[gq]
                                 ints = ints[gq]
                             masses.extend(m)
