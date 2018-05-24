@@ -3,13 +3,12 @@
 
 import numpy as np
 import warnings
-import multiprocess
+from pathos.multiprocessing import ProcessingPool as Pool
 import scipy.stats as sc_stats
 import bisect
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import Imputer
-
 
 class SpectrumListProcessor(object):
     def __init__(self, spectrum_list):
@@ -88,7 +87,7 @@ class SpectrumListProcessor(object):
             plt.legend(loc="upper right", numpoints=1)
             plt.show()
 
-    def binning(self, bin_size=0.25, int_statistic="mean", mass_statistic="mean", inplace=True, n_jobs=1):
+    def binning(self, bin_size=0.25, int_statistic="median", mass_statistic="mean", inplace=True, n_jobs=1):
         '''
 
         :param bin_size:
@@ -128,13 +127,14 @@ class SpectrumListProcessor(object):
                     bins[idx] = np.mean(values).tolist()
                 elif mass_statistic == "median":
                     bins[idx] = np.median(values)
-        
-        pool = multiprocess.Pool(n_jobs)
-        binned_spectra = pool.map_async(
-            _bin, [spectrum for spectrum in self.to_list()]).get()
-        pool.close()
-        pool.join()
 
+        if len(self.to_list()) <= 2 or n_jobs == 1:
+            binned_spectra = [_bin(s) for s in self.to_list()]
+        else:
+            pool = Pool(n_jobs)
+            binned_spectra = pool.map(_bin, self.to_list())
+
+        # TODO: This is awful. Needs to be reimplemented.
         if inplace is True:
             for result in binned_spectra:
                 binned_masses, binned_intensities, id = result
@@ -143,9 +143,16 @@ class SpectrumListProcessor(object):
                         spectrum.masses = binned_masses
                         spectrum.intensities = binned_intensities
             self._binned = True
-
         else:
-            warnings.warn("Non inplace binning yet to be implemented")
+            masses = []
+            ints = []
+            ids = []
+            for i in binned_spectra:
+                binned_masses, binned_intensities, id = i
+                masses = binned_masses
+                ints.append(binned_intensities)
+                ids.append(id)
+            return pd.DataFrame(ints, columns=masses, index=ids)
 
     def scale(self, method="mc", inplace=True):
         def __mean_center(_i):
