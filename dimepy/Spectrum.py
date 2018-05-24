@@ -66,7 +66,7 @@ class Spectrum(object):
 
         """
         self.file_path = file_path
-        if id is None:
+        if id is None and self.file_path != None:
             self._get_id_from_fp()
         else:
             self.id = id
