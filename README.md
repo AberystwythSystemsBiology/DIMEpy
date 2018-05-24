@@ -22,12 +22,18 @@ You can install it through ```pypi``` using ```pip```:
 pip install dimepy
 ```
 
-Or alternatively install it manually using ```git```:
+alternatively install it manually using ```git```:
 
 ```
 git clone https://www.github.com/KeironO/DIMEpy
 cd DIMEpy
 python setup.py install
+```
+
+Or use ```git``` and ```pip``` in unison.
+
+```
+pip install git+https://www.github.com/KeironO/DIMEpy
 ```
 
 ## Bug reporting
@@ -50,25 +56,40 @@ The following script takes a path containing mzML files, processes them followin
 import dimepy
 import os
 
-
 # Path containing mzML files.
 mzMLpaths = "/dir/to/mzMLs/"
 
-# Path to save the output.
-output_directory = "/output/directory/"
+# Where we'll store the spectrum.
+spectrum_list = dimepy.SpectrumList()
 
+for index, file in enumerate(os.listdir(mzMLpaths)):
+  # Load in the spectrum directly using default parameters.
+  spectrum = dimepy.Spectrum(os.path.join(mzMLpaths, file))
+  # Correct for baseline.
+  spectrum.baseline_correction(qtl=0.4)
+  spectrum_list.append(spectrum)
 
-# mzML parameters.
-parameters = {
-    "MS1 Precision" : 1e-6,
-    "MSn Precision" : 1e-6,
-    "Measured Precision" : 1e-6,
-    "Scan Range" : "apex",
-    "Peak Type" : "peaks"
-}
+# Write the raw spectrum to a comma seperated file.
+spectrum_list.to_csv("raw.csv")
+# Convert the object to a SpectrumListProcessor for processing.
+processor = SpectrumListProcessor(spectrum_list)
 
+# Apply outlier detection to remove spurious samples.
+processor.outlier_detection()
+# Bin masses over 0.125 m/z.
+processor.binning(bin_size=0.125)
+# Value imputate where < 50% of the values are lost across all samples.
+processor.value_imputation(method="basic", threshold=0.5)
+# Normalise over the total ion count.
+processor.normalise(method="TIC")
+# Apply generalised log transformation
+processor.transform(method="glog")
 
-# Object to store processed spectrum.
+# Convert back to SpectrumList object.
+processed_sl = processor.to_spectrumlist()
+
+# Write the processed spectrum to a comma seperated file.
+processed_sl.to_csv("processed.csv")
 
 for polarity in ["negative", "positive"]:
     spectrum_list = dimepy.SpectrumList()
