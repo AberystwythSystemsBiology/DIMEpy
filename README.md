@@ -52,7 +52,6 @@ The following script takes a path containing mzML files, processes them followin
 ```python
 
 # Importing modules required to run this script.
-
 import dimepy
 import os
 
@@ -90,45 +89,6 @@ processed_sl = processor.to_spectrumlist()
 
 # Write the processed spectrum to a comma seperated file.
 processed_sl.to_csv("processed.csv")
-
-for polarity in ["negative", "positive"]:
-    spectrum_list = dimepy.SpectrumList()
-
-    for index, file in enumerate(os.listdir(mzMLpaths)):
-        # Read a mzML file from a given directory, and process it using given parameters.
-        spectrum = dimepy.Spectrum(file_path=os.path.join(mzMLpaths, file),
-                                   polarity=polarity, parameters=parameters)
-        # Applying TIC normalisation
-        spectrum.normalise(method="tic")
-        # Applying generalised log transformation.
-        spectrum.transform(method="glog")
-        # Adding the processed spectrum to the spectrum list.
-        spectrum_list.add(spectrum)
-
-
-    # Create a spectrum list processor.
-    processor = dimepy.SpectrumListProcessor(spectrum_list)
-
-    # Apply MAD outlier detection.
-    processor.outlier_detection()
-
-    # Bin the spectrum to 0.25 m/z widths.
-    processor.binning(bin_size=0.25)
-
-    # Value imputation and value thresholding.
-    processor.value_imputation(method="basic", threshold=0.5)
-
-    # Applying mass-wise pareto scaling to the spectrum list.
-    processor.scale(method="pareto")
-
-    # Export the processed spectrum list back to a spectrum list object.
-    processed_spectrum_list = processor.to_spectrumlist()
-
-    # Convert the spectrum list to a Pandas DataFrame.
-    df = processed_spectrum_list.flatten_to_dataframe()
-
-    # Export processed spectrum to to Excel.
-    df.to_excel(os.path.join(output_directory, polarity+".xlsx"))
 ```
 
 ## License
