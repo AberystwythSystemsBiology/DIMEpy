@@ -10,12 +10,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import Imputer
 
+
 class SpectrumListProcessor(object):
     def __init__(self, spectrum_list):
-        '''
-
-        :param spectrum_list:
-        '''
         self.spectrum_list = spectrum_list
         self.mass_range = spectrum_list.get_mass_range()
         self._outlier_detected = False
@@ -28,11 +25,6 @@ class SpectrumListProcessor(object):
         return self.spectrum_list.to_list()
 
     def remove(self, spectrum):
-        '''
-
-        :param spectrum:
-        :return:
-        '''
         self.spectrum_list.remove(spectrum)
 
     def outlier_detection(self,
@@ -40,14 +32,6 @@ class SpectrumListProcessor(object):
                           inplace=True,
                           plot=False,
                           results_path=None):
-        '''
-
-        :param mad_threshold:
-        :param inplace:
-        :param plot_path:
-        :param results_path:
-        :return:
-        '''
 
         tics = [sum(s.intensities) for s in self.to_list()]
 
@@ -87,15 +71,12 @@ class SpectrumListProcessor(object):
             plt.legend(loc="upper right", numpoints=1)
             plt.show()
 
-    def binning(self, bin_size=0.25, int_statistic="median", mass_statistic="mean", inplace=True, n_jobs=1):
-        '''
-
-        :param bin_size:
-        :param statistic:
-        :param inplace:
-        :param n_jobs:
-        :return:
-        '''
+    def binning(self,
+                bin_size=0.25,
+                int_statistic="median",
+                mass_statistic="mean",
+                inplace=True,
+                n_jobs=1):
         bins = np.arange(
             round(self.mass_range[0]),
             round(self.mass_range[1]),
@@ -106,7 +87,7 @@ class SpectrumListProcessor(object):
             for spectrum in self.to_list():
                 sm = np.array(spectrum.masses)
                 for b in bins:
-                    m_bins = np.logical_and(sm >= b, sm <= (b+bin_size))
+                    m_bins = np.logical_and(sm >= b, sm <= (b + bin_size))
                     binned_masses[b].extend(sm[m_bins])
             return binned_masses
 
@@ -192,14 +173,6 @@ class SpectrumListProcessor(object):
             spectrum._transform(method=method)
 
     def value_imputation(self, method="basic", threshold=0.5, inplace=True):
-        '''
-
-        :param method:
-        :param threshold:
-        :param inplace:
-        :return:
-        '''
-
         def _remove_bins_by_threshold():
             df = self.spectrum_list.flatten_to_dataframe()
 
@@ -243,11 +216,7 @@ class SpectrumListProcessor(object):
             return df
 
     def pandas_to_spectrum(self, df):
-        '''
 
-        :param df:
-        :return:
-        '''
         masses = df.columns
         for id, values in df.iterrows():
             intensities = values.values
@@ -256,9 +225,5 @@ class SpectrumListProcessor(object):
             spectrum.intensities = intensities
 
     def to_spectrumlist(self):
-        '''
-
-        :return:
-        '''
         from SpectrumList import SpectrumList
         return SpectrumList(self.to_list())

@@ -7,44 +7,19 @@ import numpy as np
 
 class SpectrumList(object):
     def __init__(self, _spectrum=[]):
-        '''
-
-        :param _spectrum:
-        '''
         self.__spectrum = _spectrum
 
     def append(self, Spectrum):
-        '''
-
-        :param Spectrum:
-        :return:
-        '''
         self.__spectrum.append(Spectrum)
 
     def pickle(self, file_path):
-        '''
-
-        :param file_path:
-        :return:
-        '''
         with open(file_path, "wb") as output:
             pkl.dump(self, output, pkl.HIGHEST_PROTOCOL)
 
     def remove(self, Spectrum):
-        '''
-
-        :param Spectrum:
-        :return:
-        '''
         self.__spectrum.remove(Spectrum)
 
     def to_csv(self, file_path, delimiter=","):
-        '''
-
-        :param file_path:
-        :param delimiter:
-        :return:
-        '''
         raw_values = []
 
         for spectrum in self.__spectrum:
@@ -60,10 +35,6 @@ class SpectrumList(object):
             output.close()
 
     def flatten_to_dataframe(self):
-        '''
-
-        :return:
-        '''
         output = []
         for spectrum in self.to_list():
             df = pd.DataFrame(spectrum.intensities).T

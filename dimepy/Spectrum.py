@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
-from math import floor
+from math import floor, asinh
 from collections import defaultdict
 from copy import copy
 import numpy as np
@@ -15,6 +15,7 @@ from scipy.interpolate import interp1d
 import warnings
 import matplotlib.pyplot as plt
 from operator import itemgetter
+from data import mzmlProcessor
 
 np.seterr("ignore")
 
@@ -33,10 +34,14 @@ class Spectrum(object):
         apex_mad (int):
         snr_estimator (str):
         injection_order (int):
+        label (str):
 
     Attributes:
+        masses (np.array):
+        intensities(np.array):
         _loaded (bool):
         _normalised (bool):
+        _transformed (bool):
         _scaled (bool):
         _baseline_corrected (bool):
         _injection_order (int):
@@ -45,7 +50,6 @@ class Spectrum(object):
         __raw_spectrum (pymzml.Reader):
 
     """
-    polarity_dict = {"POSITIVE": "MS:1000130", "NEGATIVE": "MS:1000129"}
 
     _loaded = False
 
@@ -72,12 +76,15 @@ class Spectrum(object):
                  apex_mad=2,
                  snr_estimator="median",
                  max_snr=2.5,
-                 injection_order=None):
+                 injection_order=None,
+                 label=None):
 
         self.file_path = file_path
-        if id is None and self.file_path != None:
-            self._get_id_from_fp()
-        else:
+        if self.file_path != None:
+            self._load_from_file()
+            if id is None:
+                self._get_id_from_fp()
+        if id != None and self.id != None:
             self.id = id
 
         if injection_order is not None:
@@ -92,20 +99,20 @@ class Spectrum(object):
         self.min_mz = min_mz
         self.max_mz = max_mz
         self.polarity = polarity
-        if self.file_path != None:
-            self._load_from_file()
-        self._normalised = False
-        self._transformed = False
-        self._baseline_corrected = False
-        self._scaled = False
+        self.label = label
+
 
     def _get_id_from_fp(self):
         """Provides a spectrum identifier from the file_path attribute.
 
         If no id is passed, then the the filename (minus the file extension)
         will be used as the identifier.
+
+        Note:
+            Should not be ran outside of this class.
         """
         self.id = os.path.splitext(os.path.basename(self.file_path))[0]
+
 
     def baseline_correction(self, wsize=50, qtl=0.1, inplace=True):
         """Application of baseline correction over the spectrum intensities.
@@ -152,18 +159,22 @@ class Spectrum(object):
 
             bl = np.interp(self.intensities, ymz, ymax)
             return bl
-
-        bl = bc()
-        baseline_corrected = self.intensities - bl
-        if inplace == True:
-            indx = baseline_corrected > 0
-            self.masses = self.masses[indx]
-            self.intensities = baseline_corrected[indx]
+        if self._baseline_corrected != True:
+            bl = bc()
+            baseline_corrected = self.intensities - bl
+            if inplace == True:
+                indx = baseline_corrected > 0
+                self.masses = self.masses[indx]
+                self.intensities = baseline_corrected[indx]
+            else:
+                return baseline_corrected
         else:
-            return baseline_corrected
+            raise Exception("%s has already been baseline corrected" % self.id)
 
-    def _normalise(self, method="tic", inplace=True):
+    def normalise(self, method="tic", inplace=True):
         """Application of normalisation over the spectrum intensities.
+
+        Normalisation aims to remove sources of variability within the spectrum.
 
         Args:
             method (str):
@@ -181,10 +192,10 @@ class Spectrum(object):
                 normalised_intensities = np.array(
                     [x - median_intensity for x in self.intensities]) * 1000
             else:
-                normalised_intensities = self.intensities
+                raise ValueError("%s is not a supported normalisation method" % method)
+
         else:
-            warnings.warn("Warning: %s already normalised, ignoring" % self.id)
-            normalised_intensities = self.intensities
+            raise Exception("%s already normalised" % self.id)
 
         if inplace == True:
             self.intensities = normalised_intensities
@@ -192,7 +203,7 @@ class Spectrum(object):
         else:
             return normalised_intensities
 
-    def _transform(self, method="log10", inplace=True):
+    def transform(self, method="log10", inplace=True):
         """"
 
         Args:
@@ -212,17 +223,16 @@ class Spectrum(object):
             elif method.upper() == "LOG2":
                 transformed_intensities = np.log2(self.intensities)
             elif method.upper() == "GLOG":
-
-                def __lognorm(x, min):
-                    return np.log2((x + np.sqrt(x**2 + min**2)) / 2)
-
-                transformed_intensities = __lognorm(self.intensities,
-                                                    min(self.intensities) / 10)
+                min = min(self.intensities) / 10
+                transformed_intensities = np.log2(self.intensities + np.sqrt(self.intensities**2 + min**2)) / 2)
+            elif method.upper() == "SQRT":
+                transformed_intensities = np.array([sqrt(x) for x in self.intensities])
+            elif method.upper() == "IHS":
+                transformed_intensities = np.array([asinh(x) for x in self.intensities])
             else:
-                pass
+                raise ValueError("%s is not a supported transformation method" % method)
         else:
-            warnings.warn("Warning: %s already normalised, ignoring" % self.id)
-            transformed_intensities = self.intensities
+            raise Exception("%s already transformed" % self.id)
 
         if inplace is True:
             self.intensities = transformed_intensities
@@ -242,8 +252,9 @@ class Spectrum(object):
                 reader = __gen_reader()
                 scans = []
                 for scan_number, scan in enumerate(reader):
+                    polarity_dict = {"POSITIVE": "MS:1000130", "NEGATIVE": "MS:1000129"}
                     if self.polarity != None:
-                        if scan.get(self.polarity_dict[self.polarity.upper()]
+                        if scan.get(polarity_dict[self.polarity.upper()]
                                     ) != None:
                             scans.append(scan_number)
                     else:
@@ -322,21 +333,30 @@ class Spectrum(object):
             raise Exception()
 
     def plot(self, show=True, xlim=[], scaled=False, file_path=None):
-        """
+        """Method to visualise spectrum profile data using matplotlib.
 
         Args:
-            show (boolean):
-            xlim (list):
-            scaled (boolean):
-            file_path (str):
+            show (boolean): Whether or not to print the plot to screen.
+            xlim (list): Mass boundaries for plotting purposes, for example
+                passing [50,500] would limit the plot to everything between those
+                values.
+            scaled (boolean): Whether or not to scale the intensities from 0 to 1.
+            file_path (str): If provided, where to save the plot. Can accept all
+                standard matplotlib outputs.
 
         """
         plt.figure()
         plt.title(self.id)
         plt.xlabel("Mass-to-ion (m/z)")
         plt.ylim(0, max(self.intensities))
-        plt.ylabel("Intensity")
-
+        if self._normalised == True and self._transformed == False:
+            plt.ylabel("Normalised Intensity")
+        elif self._normalised == False and self._transformed == True:
+            plt.ylabel("Transformed Intensity")
+        elif self._normalised == True and self._transformed == True:
+            plt.ylabel("Processed Intensity")
+        else:
+            plt.ylabel("Intensity")
         if xlim == []:
             xlim = [min(self.masses), max(self.masses)]
             plt.ylim(0, max(self.intensities))
