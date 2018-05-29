@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from os.path import splitext
 import pymzml
 import numpy as np

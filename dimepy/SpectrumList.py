@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import pandas as pd
 import cPickle as pkl
 import collections
@@ -45,6 +47,14 @@ class SpectrumList(object):
 
     def to_list(self):
         return list(self.__spectrum)
+
+    def pandas_to_spectrum(self, df):
+        masses = df.columns
+        for id, values in df.iterrows():
+            intensities = values.values
+            spectrum = [x for x in self.to_list() if x.id == id][0]
+            spectrum.masses = masses
+            spectrum.intensities = intensities
 
     def get_mass_range(self):
         smallest = None

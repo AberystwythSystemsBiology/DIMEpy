@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# encoding: utf-8
 
 import numpy as np
 import warnings
@@ -9,9 +8,9 @@ import bisect
 import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import Imputer
+from SpectrumList import SpectrumList
 
-
-class SpectrumListProcessor(object):
+class SpectrumListProcessor(SpectrumList):
     def __init__(self, spectrum_list):
         self.spectrum_list = spectrum_list
         self.mass_range = spectrum_list.get_mass_range()
@@ -21,11 +20,6 @@ class SpectrumListProcessor(object):
         self._scaled = False
         self._value_imputated = False
 
-    def to_list(self):
-        return self.spectrum_list.to_list()
-
-    def remove(self, spectrum):
-        self.spectrum_list.remove(spectrum)
 
     def outlier_detection(self,
                           mad_threshold=3,
@@ -215,14 +209,6 @@ class SpectrumListProcessor(object):
         else:
             return df
 
-    def pandas_to_spectrum(self, df):
-
-        masses = df.columns
-        for id, values in df.iterrows():
-            intensities = values.values
-            spectrum = [x for x in self.to_list() if x.id == id][0]
-            spectrum.masses = masses
-            spectrum.intensities = intensities
 
     def to_spectrumlist(self):
         from SpectrumList import SpectrumList

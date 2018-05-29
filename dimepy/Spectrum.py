@@ -141,7 +141,7 @@ class Spectrum(object):
         Notes
         -----
 
-        Should not be run outside of this class.
+        Should not be called outside of this class.
 
         """
         self.id = os.path.splitext(os.path.basename(self.fp))[0]
@@ -315,6 +315,14 @@ class Spectrum(object):
             return transformed_intensities
 
     def _load_from_file(self):
+        """Method for loading a Spectrum from file.
+
+        Notes
+        -----
+
+        Should not be called outside of this class.
+
+        """
         def __get_apex(scans):
             tics = scans.tics
             mad = np.mean(np.absolute(tics - np.mean(tics)))
