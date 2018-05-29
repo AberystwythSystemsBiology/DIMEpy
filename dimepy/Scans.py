@@ -10,9 +10,9 @@ class Scans(object):
 
     def __init__(self,
                  fp,
-                 snr_estimator="median",
-                 max_snr=3,
-                 type="peaks"):
+                 snr_estimator,
+                 max_snr,
+                 type):
         self.fp = fp
         self.snr_estimator = snr_estimator
         self.max_snr = max_snr

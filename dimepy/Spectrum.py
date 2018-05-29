@@ -20,34 +20,68 @@ from Scans import Scans
 np.seterr("ignore")
 
 class Spectrum(object):
-    """This is a class that holds, manages, and manipulates mass spectrometry
-    data/information.
+    """A Spectrum class.
 
-    Args:
-        file_path (str):
-        id (str):
-        polarity (str):
-        type (str):
-        min_mz (float):
-        max_mz (float):
-        apex (bool):
-        apex_mad (int):
-        snr_estimator (str):
-        injection_order (int):
-        label (str):
+    This is a class that holds, manages, and manipulates mass spectrometry
+    information.
 
-    Attributes:
-        masses (np.array):
-        intensities(np.array):
-        _loaded (bool):
-        _normalised (bool):
-        _transformed (bool):
-        _scaled (bool):
-        _baseline_corrected (bool):
-        _injection_order (int):
-        masses (np.array):
-        intensities (np.array):
-        __raw_spectrum (pymzml.Reader):
+
+    Parameters
+    ----------
+
+    fp : string, optional (default=None)
+        Filepath to file of interest.
+
+    id : string, optional (default=None)
+        An identifier for the Spectrum.
+        Note: if None is given one will be generated from the file path.
+
+    polarity : string, optional (default=None)
+        Polarity for fast polarity switching.
+
+        - If "positive" then only positive ion scans will be read.
+        - If "negative" then only negative ion scans will be read.
+        - If None, all ion scans will be read.
+
+    type : string, optional (default="peaks")
+        Set what type of peaks you want to read into the Spectrum object.
+
+        - If "peaks" then return all peaks of the spectrum.
+        - If "centroidedPeaks" then return a centroided version of the
+          profile spectrum.
+        - If "reprofiledPeaks" then return a version a centroided spectrum.
+
+    apex_mad : integer, optional (default=None)
+        This method implements an 'automated' apex method akin to FIEmspro.
+
+        - If None then return all scans as a single matrix.
+        - If integer/float, then return all scans whose TIC are equal to or
+          greater than the mean absolute deviation times the given value.
+
+    snr_estimator : string, optional (default=None)
+        Apply signal to noise filtering.
+
+        - If None, then do not apply signal to noise filtering.
+        - If "mad" then perform mean absolute deviation-based noise filtering.
+        - If "mean" then perform mean-based noise filtering.
+        - If "median" then perform median-based noise filtering.
+
+    max_snr : float, optional (default=2.5)
+        Value to use for signal to noise ratio filtering. If calculated snr is
+        greater than or equal to the given value - then the signal will be
+        removed.
+
+    injection_order : integer, optional (default=None)
+        The injection order of the Spectrum file.
+
+    label : string, optional (default=None)
+        Class label.
+
+    Attributes
+    ----------
+
+    masses : array of shape = [n_masses] containing mass-to-ion data.
+    intensities : array of shape = [n_intensities] containing intensity data.
 
     """
 
@@ -63,15 +97,12 @@ class Spectrum(object):
     masses = np.array([])
     intensities = np.array([])
 
-    __raw_spectrum = None
-
     def __init__(self,
                  fp=None,
                  id=None,
                  polarity=None,
                  type="peaks",
-                 apex=False,
-                 apex_mad=2,
+                 apex_mad=None,
                  snr_estimator=None,
                  max_snr=2.5,
                  injection_order=None,
@@ -82,7 +113,6 @@ class Spectrum(object):
             self.polarity = polarity.upper()
         else:
             self.polarity = polarity
-        self.apex = apex
         self.apex_mad = apex_mad
         self.max_snr = max_snr
         self.snr_estimator = snr_estimator
@@ -110,7 +140,7 @@ class Spectrum(object):
         will be used as the identifier.
 
         Note:
-            Should not be ran outside of this class.
+            Should not be run outside of this class.
         """
         self.id = os.path.splitext(os.path.basename(self.fp))[0]
 
@@ -150,7 +180,7 @@ class Spectrum(object):
             for _, k in interv.iterrows():
                 k_b = x[int(k[0]):int(k[1])]
                 y_max.append(mquantiles(k_b, prob=qtl)[0])
-            #ymz = interv.iloc[::2, :].mean(axis=1).values
+            ymz = interv.iloc[::2, :].mean(axis=1).values
 
             ymz = interv.mean(axis=1).values
             ymz = np.insert(ymz, 0, 0)
@@ -167,13 +197,14 @@ class Spectrum(object):
                 indx = baseline_corrected > 0
                 self.masses = self.masses[indx]
                 self.intensities = baseline_corrected[indx]
+                self._baseline_corrected = True
             else:
                 return baseline_corrected
         else:
             raise Exception("%s has already been baseline corrected" % self.id)
 
     def normalise(self, method="tic", inplace=True):
-        """Application of normalisation over the spectrum intensities.
+        """Application of normalisation over spectrum intensities.
 
         Normalisation aims to remove sources of variability within the spectrum.
 
@@ -254,7 +285,7 @@ class Spectrum(object):
             indx = scans.polarities == self.polarity
             scans.limiter(indx)
 
-        if self.apex == True:
+        if self.apex_mad != None:
             __get_apex(scans)
 
         masses, intensities = zip(*scans.scans)
