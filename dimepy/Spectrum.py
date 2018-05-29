@@ -70,17 +70,25 @@ class Spectrum(object):
                  id=None,
                  polarity=None,
                  type="peaks",
-                 min_mz=50.0,
-                 max_mz=5000,
-                 filter_noise=True,
                  apex=False,
                  apex_mad=2,
-                 snr_estimator="median",
+                 snr_estimator=None,
                  max_snr=2.5,
                  injection_order=None,
                  label=None):
 
         self.fp = fp
+        if polarity != None:
+            self.polarity = polarity.upper()
+        else:
+            self.polarity = polarity
+        self.apex = apex
+        self.apex_mad = apex_mad
+        self.max_snr = max_snr
+        self.snr_estimator = snr_estimator
+        self.type = type
+        self.label = label
+
         if self.fp != None:
             self._load_from_file()
             if id is None:
@@ -92,16 +100,7 @@ class Spectrum(object):
             self._injection_order = int(injection_order)
         else:
             self._injection_order = 0
-        self.apex = apex
-        self.apex_mad = apex_mad
-        self.max_snr = max_snr
-        self.filter_noise = filter_noise,
-        self.snr_estimator = snr_estimator
-        self.type = type
-        self.min_mz = min_mz
-        self.max_mz = max_mz
-        self.polarity = polarity
-        self.label = label
+
 
 
     def _get_id_from_fp(self):
@@ -243,8 +242,28 @@ class Spectrum(object):
             return transformed_intensities
 
     def _load_from_file(self):
-            scans = Scans(self.fp)
+        def __get_apex(scans):
+            tics = scans.tics
+            mad = np.mean(np.absolute(tics - np.mean(tics)))
+            indx = tics >= mad*self.apex_mad
+            scans.limiter(indx)
 
+        scans = Scans(self.fp, self.snr_estimator, self.max_snr, self.type)
+
+        if self.polarity != None:
+            indx = scans.polarities == self.polarity
+            scans.limiter(indx)
+
+        if self.apex == True:
+            __get_apex(scans)
+
+        masses, intensities = zip(*scans.scans)
+        masses = np.concatenate(masses).ravel().tolist()
+        intensities = np.concatenate(intensities).ravel().tolist()
+
+        masses, intensities = zip(*sorted(zip(masses, intensities)))
+        self.masses = np.array(masses)
+        self.intensities = np.array(intensities)
 
     def plot(self, show=True, xlim=[], scaled=False, file_path=None):
         """Method to visualise spectrum profile data using matplotlib.

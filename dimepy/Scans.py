@@ -73,6 +73,11 @@ class Scans(object):
     def __from_raw(self):
         raise NotImplementedError("This has yet to be implemented.")
 
+    def limiter(self, indx):
+        self.__scans = np.array(self.__scans)[indx].tolist()
+        self.__polarities = np.array(self.__polarities)[indx].tolist()
+        self.__tics = np.array(self.__tics)[indx].tolist()
+
     @property
     def scans(self):
         return np.array(self.__scans)
