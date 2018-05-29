@@ -19,6 +19,7 @@ from Scans import Scans
 
 np.seterr("ignore")
 
+
 class Spectrum(object):
     """A Spectrum class.
 
@@ -131,19 +132,19 @@ class Spectrum(object):
         else:
             self._injection_order = 0
 
-
-
     def _get_id_from_fp(self):
         """Provides a spectrum identifier from the file_path attribute.
 
         If no id is passed, then the the filename (minus the file extension)
         will be used as the identifier.
 
-        Note:
-            Should not be run outside of this class.
+        Notes
+        -----
+
+        Should not be run outside of this class.
+
         """
         self.id = os.path.splitext(os.path.basename(self.fp))[0]
-
 
     def baseline_correction(self, wsize=50, qtl=0.1, inplace=True):
         """Application of baseline correction over the spectrum intensities.
@@ -153,14 +154,24 @@ class Spectrum(object):
         estimate for this region. The whole baseline is then computed through the use
         of linear interpolation via the central pairs of each interval.
 
-        Args:
-            wsize (int): Window size to be used for indexing over intensities.
-            qtl (float): A value to be used to calculate the lower quantile probabilitiy.
-            inplace (bool): If False then return the corrected baseline array,
-                else make the change within the object.
+        Parameters
+        ----------
 
-        Note:
-            Python implementation of onebc.R from FIEmspro.
+        wsize : integer (default=50)
+            Window size to be used for indexing over intensities.
+
+        qtl : float (default=0.1)
+            A value to be used to calculate the lower quantile probabilitiy.
+
+        inplace : boolean, optional (default=True)
+            If False then return the corrected intensities array, else make the
+            change within the object.
+
+        Notes
+        -----
+
+        Python implementation of onebc.R from FIEmspro.
+
         """
 
         def bc():
@@ -190,6 +201,7 @@ class Spectrum(object):
 
             bl = np.interp(self.intensities, ymz, ymax)
             return bl
+
         if self._baseline_corrected != True:
             bl = bc()
             baseline_corrected = self.intensities - bl
@@ -208,10 +220,19 @@ class Spectrum(object):
 
         Normalisation aims to remove sources of variability within the spectrum.
 
-        Args:
-            method (str):
-            inplace (bool): If False then return the corrected baseline array,
-                else make the change within the object.
+        Parameters
+        ----------
+
+        method : string, optional (default="tic")
+            Method to use for normalisation.
+
+            - If "tic" then apply TIC normalisation.
+            - If "median" then apply normalisation by the median.
+
+        inplace : boolean, optional (default=True)
+            If False then return normalised intensities, else make the
+            change within the object.
+
         """
 
         if self._normalised is False:
@@ -224,7 +245,8 @@ class Spectrum(object):
                 normalised_intensities = np.array(
                     [x - median_intensity for x in self.intensities]) * 1000
             else:
-                raise ValueError("%s is not a supported normalisation method" % method)
+                raise ValueError(
+                    "%s is not a supported normalisation method" % method)
 
         else:
             raise Exception("%s already normalised" % self.id)
@@ -236,11 +258,27 @@ class Spectrum(object):
             return normalised_intensities
 
     def transform(self, method="log10", inplace=True):
-        """
+        """Application of transformation over spectrum intensities.
 
-        Args:
-            method (str):
-            inplace (bool):
+        Transformation aims to make the data less skewed.
+
+        Parameters
+        ----------
+
+        method : string, optional (default="log10")
+            Method to use for transformation.
+
+            - If "log10" then apply log10 transformation.
+            - If "cube" then apply cube transformation.
+            - If "nglog" then apply nlog transformation.
+            - If "log2" then apply log2 transformation.
+            - If "glog" then apply globalised log transformation.
+            - If "sqrt" then apply square root-based transformation.
+            - If "ihs" then apply inverse hyperbolic sine transformation.
+
+        inplace : boolean, optional (default=True)
+            If False then return normalised intensities, else make the
+            change within the object.
 
         """
 
@@ -256,13 +294,17 @@ class Spectrum(object):
                 transformed_intensities = np.log2(self.intensities)
             elif method.upper() == "GLOG":
                 min = min(self.intensities) / 10
-                transformed_intensities = np.log2(self.intensities + np.sqrt(self.intensities**2 + min**2)) / 2
+                transformed_intensities = np.log2(self.intensities + np.sqrt(
+                    self.intensities**2 + min**2)) / 2
             elif method.upper() == "SQRT":
-                transformed_intensities = np.array([sqrt(x) for x in self.intensities])
+                transformed_intensities = np.array(
+                    [sqrt(x) for x in self.intensities])
             elif method.upper() == "IHS":
-                transformed_intensities = np.array([asinh(x) for x in self.intensities])
+                transformed_intensities = np.array(
+                    [asinh(x) for x in self.intensities])
             else:
-                raise ValueError("%s is not a supported transformation method" % method)
+                raise ValueError(
+                    "%s is not a supported transformation method" % method)
         else:
             raise Exception("%s already transformed" % self.id)
 
@@ -276,7 +318,7 @@ class Spectrum(object):
         def __get_apex(scans):
             tics = scans.tics
             mad = np.mean(np.absolute(tics - np.mean(tics)))
-            indx = tics >= mad*self.apex_mad
+            indx = tics >= mad * self.apex_mad
             scans.limiter(indx)
 
         scans = Scans(self.fp, self.snr_estimator, self.max_snr, self.type)
@@ -296,17 +338,29 @@ class Spectrum(object):
         self.masses = np.array(masses)
         self.intensities = np.array(intensities)
 
-    def plot(self, show=True, xlim=[], scaled=False, file_path=None):
+    def plot(self, show=True, xlim=[], scaled=False, fp=None):
         """Method to visualise spectrum profile data using matplotlib.
 
-        Args:
-            show (boolean): Whether or not to print the plot to screen.
-            xlim (list): Mass boundaries for plotting purposes, for example
-                passing [50,500] would limit the plot to everything between those
-                values.
-            scaled (boolean): Whether or not to scale the intensities from 0 to 1.
-            file_path (str): If provided, where to save the plot. Can accept all
-                standard matplotlib outputs.
+
+        Parameters
+        ----------
+
+        show : boolean, optional (default=True)
+            Whether or not to print the plot to screen.
+
+        xlim : list, optional (default=[])
+            Mass boundaries for plotting purposes, for example
+            passing [50,500] would limit the plot to everything between those
+            mass-to-ion values.
+
+        scaled : boolean, optional (default=False)
+             Whether or not to scale the intensities from 0 to 1.
+
+        fp : string, optional (default=None)
+            If provided, where to save the plot. Can accept all standard
+            matplotlib outputs.
+
+            - If None then do not save to file.
 
         """
         plt.figure()
@@ -335,8 +389,8 @@ class Spectrum(object):
             plt.ylim(0, max(scaled_intensities))
             plt.ylabel("Scaled Intensity")
         plt.tight_layout()
-        if file_path is not None:
-            plt.savefig(file_path)
+        if fp is not None:
+            plt.savefig(fp)
         else:
             plt.show()
         plt.clf()
