@@ -15,7 +15,7 @@ from scipy.interpolate import interp1d
 import warnings
 import matplotlib.pyplot as plt
 from operator import itemgetter
-from data import mzmlProcessor
+from Scans import Scans
 
 np.seterr("ignore")
 
@@ -66,12 +66,13 @@ class Spectrum(object):
     __raw_spectrum = None
 
     def __init__(self,
-                 file_path=None,
+                 fp=None,
                  id=None,
                  polarity=None,
                  type="peaks",
                  min_mz=50.0,
                  max_mz=5000,
+                 filter_noise=True,
                  apex=False,
                  apex_mad=2,
                  snr_estimator="median",
@@ -79,8 +80,8 @@ class Spectrum(object):
                  injection_order=None,
                  label=None):
 
-        self.file_path = file_path
-        if self.file_path != None:
+        self.fp = fp
+        if self.fp != None:
             self._load_from_file()
             if id is None:
                 self._get_id_from_fp()
@@ -94,6 +95,7 @@ class Spectrum(object):
         self.apex = apex
         self.apex_mad = apex_mad
         self.max_snr = max_snr
+        self.filter_noise = filter_noise,
         self.snr_estimator = snr_estimator
         self.type = type
         self.min_mz = min_mz
@@ -111,7 +113,7 @@ class Spectrum(object):
         Note:
             Should not be ran outside of this class.
         """
-        self.id = os.path.splitext(os.path.basename(self.file_path))[0]
+        self.id = os.path.splitext(os.path.basename(self.fp))[0]
 
 
     def baseline_correction(self, wsize=50, qtl=0.1, inplace=True):
@@ -180,7 +182,7 @@ class Spectrum(object):
             method (str):
             inplace (bool): If False then return the corrected baseline array,
                 else make the change within the object.
-        """"
+        """
 
         if self._normalised is False:
             if method.upper() == "TIC":
@@ -204,13 +206,13 @@ class Spectrum(object):
             return normalised_intensities
 
     def transform(self, method="log10", inplace=True):
-        """"
+        """
 
         Args:
             method (str):
             inplace (bool):
 
-        """"
+        """
 
         if self._transformed is False:
             if method.upper() == "LOG10":
@@ -224,7 +226,7 @@ class Spectrum(object):
                 transformed_intensities = np.log2(self.intensities)
             elif method.upper() == "GLOG":
                 min = min(self.intensities) / 10
-                transformed_intensities = np.log2(self.intensities + np.sqrt(self.intensities**2 + min**2)) / 2)
+                transformed_intensities = np.log2(self.intensities + np.sqrt(self.intensities**2 + min**2)) / 2
             elif method.upper() == "SQRT":
                 transformed_intensities = np.array([sqrt(x) for x in self.intensities])
             elif method.upper() == "IHS":
@@ -241,96 +243,8 @@ class Spectrum(object):
             return transformed_intensities
 
     def _load_from_file(self):
-        def __from_mzml():
-            def __gen_reader():
-                return pymzml.run.Reader(
-                    self.file_path,
-                    extraAccessions=[["MS:1000129", ["value"]],
-                                     ["MS:1000130", ["value"]]])
+            scans = Scans(self.fp)
 
-            def __get_scans_of_interest():
-                reader = __gen_reader()
-                scans = []
-                for scan_number, scan in enumerate(reader):
-                    polarity_dict = {"POSITIVE": "MS:1000130", "NEGATIVE": "MS:1000129"}
-                    if self.polarity != None:
-                        if scan.get(polarity_dict[self.polarity.upper()]
-                                    ) != None:
-                            scans.append(scan_number)
-                    else:
-                        scans.append(scan_number)
-
-                reader = __gen_reader()
-                if self.apex == True:
-                    '''
-                        The following method is taken from FIEmspro, with a small
-                        amount of modification for automated selection of the
-                        infusion profile scan-ranges.
-                    '''
-                    tics = []
-                    for scan_number, scan in enumerate(reader):
-                        if scan_number in scans:
-                            tic = sum(zip(*scan.peaks)[1])
-                            tics.append([scan_number, tic])
-                    mad = np.mean(
-                        np.absolute(zip(*tics)[1] - np.mean(zip(*tics)[1])))
-
-                    peak_scans = [
-                        x for x in tics if x[1] >= (self.apex_mad * mad)
-                    ]
-                    # I've noticed that some profiles have a strange overflow at the end
-                    # of the run, so I will look for those and discard here.
-                    peak_range_mad = np.mean(
-                        np.absolute(
-                            zip(*peak_scans)[0] - np.mean(zip(*peak_scans)[0]))
-                    )
-                    scans = [
-                        x[0] for x in peak_scans if x[0] >= peak_range_mad
-                    ]
-
-                return scans
-
-            def __get_scan(scan_range):
-                masses = []
-                intensities = []
-                reader = __gen_reader()
-                for scan_number, scan in enumerate(reader):
-                    if scan["ms level"] != None and scan_number in scan_range:
-                        m, ints = zip(*scan.peaks)
-                        m, ints = np.array(m), np.array(ints)
-                        indx = np.logical_and(
-                            np.array(m) >= self.min_mz,
-                            np.array(m) <= self.max_mz)
-                        m = m[indx]
-                        ints = ints[indx]
-                        if len(m) > 0:
-                            if self.snr_estimator != None:
-                                sn_r = np.divide(
-                                    ints,
-                                    scan.estimatedNoiseLevel(
-                                        mode=self.snr_estimator))
-                                gq = sn_r >= self.max_snr
-                                m = m[gq]
-                                ints = ints[gq]
-                            masses.extend(m)
-                            intensities.extend(ints)
-
-                masses, intensities = zip(*sorted(zip(masses, intensities)))
-                masses, intensities = np.array(masses), np.array(intensities)
-                non_z = [intensities != 0]
-                return masses[non_z], intensities[non_z]
-
-            scan_range = __get_scans_of_interest()
-            self.masses, self.intensities = __get_scan(scan_range)
-
-        if self.file_path.upper().endswith("MZML"):
-            __from_mzml()
-        elif self.file_path.upper().endswith("CSV"):
-            print "CSV not implemented"
-        elif self.file_path.upper().endswith("PKL"):
-            print "PKL not implemented"
-        else:
-            raise Exception()
 
     def plot(self, show=True, xlim=[], scaled=False, file_path=None):
         """Method to visualise spectrum profile data using matplotlib.
