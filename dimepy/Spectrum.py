@@ -83,6 +83,7 @@ class Spectrum(object):
 
     masses : array of shape = [n_masses] containing mass-to-ion data.
     intensities : array of shape = [n_intensities] containing intensity data.
+    tic : integer calculated by summing the intensities.
 
     """
 
@@ -92,8 +93,6 @@ class Spectrum(object):
     _transformed = False
     _scaled = False
     _baseline_corrected = False
-
-    _injection_order = None
 
     masses = np.array([])
     intensities = np.array([])
@@ -128,9 +127,13 @@ class Spectrum(object):
             self.id = id
 
         if injection_order is not None:
-            self._injection_order = int(injection_order)
+            self.injection_order = int(injection_order)
         else:
-            self._injection_order = 0
+            self.injection_order = 0
+
+    @property
+    def tic(self):
+        return sum(self.intensities)
 
     def _get_id_from_fp(self):
         """Provides a spectrum identifier from the file_path attribute.

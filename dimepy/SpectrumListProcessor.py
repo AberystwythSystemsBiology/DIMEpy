@@ -9,11 +9,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.preprocessing import Imputer
 from SpectrumList import SpectrumList
+from copy import copy
 
 class SpectrumListProcessor(SpectrumList):
     def __init__(self, spectrum_list):
-        self.spectrum_list = spectrum_list
-        self.mass_range = spectrum_list.get_mass_range()
+        self._spectrum_list = copy(spectrum_list)
+        self.mass_range = self._spectrum_list.get_mass_range()
         self._outlier_detected = False
         self._binned = False
         self._centered = False
@@ -22,48 +23,30 @@ class SpectrumListProcessor(SpectrumList):
 
 
     def outlier_detection(self,
-                          mad_threshold=3,
+                          threshold=3,
                           inplace=True,
-                          plot=False,
-                          results_path=None):
+                          plot=False):
+        """Perform outlier detection.
 
-        tics = [sum(s.intensities) for s in self.to_list()]
+        This method detects and removes sample outliers through the use of the
+        mean absolute deviation over the total ion counts.
 
-        mean_tic = np.nanmean(tics)
-        mean_abs_dev = np.nanmean([abs(x - mean_tic) for x in tics])
-        ad_f_m = [abs((x - mean_tic) / mean_abs_dev) for x in tics]
+        Parameters
+        ----------
 
-        outlier_spectrum = [
-            s for i, s in enumerate(self.to_list())
-            if ad_f_m[i] > mad_threshold
-        ]
+        threshold : float, optional (default=3)
 
-        if inplace is True:
-            [self.remove(x) for x in outlier_spectrum]
-            warnings.warn("Outlier detection removed: " +
-                          ",".join([x.id for x in outlier_spectrum]))
-            self._outlier_detected = True
-        else:
-            return outlier_spectrum
+        plot : boolean, optional (default=False)
 
-        if plot is True:
-            plt.figure()
-            plt.xlabel("Injection Order")
-            plt.ylabel("Total Ion Count (TIC)")
-            plt.scatter(
-                [x._injection_order for x in self.to_list()],
-                [sum(x.intensities) for x in self.to_list()],
-                marker="o",
-                color="b",
-                label="Passed")
-            plt.scatter(
-                [x._injection_order for x in outlier_spectrum],
-                [sum(x.intensities) for x in outlier_spectrum],
-                marker="x",
-                color="r",
-                label="Outliers")
-            plt.legend(loc="upper right", numpoints=1)
-            plt.show()
+        inplace : boolean, optional (default=True)
+            If False then return the corrected intensities array, else make the
+            change within the object.
+
+        """
+        pass
+
+
+
 
     def binning(self,
                 bin_size=0.25,
@@ -71,6 +54,22 @@ class SpectrumListProcessor(SpectrumList):
                 mass_statistic="mean",
                 inplace=True,
                 n_jobs=1):
+        """Perform mass-binning.
+
+        Parameters
+        ----------
+
+        bin_size : float, optional (default=0.25)
+
+        int_statistic : string, optional (default="median")
+
+        mass_statistic : string, optional (default="mean")
+
+        inplace : boolean, optional (default=True)
+
+        n_jobs : integer, optional (default=1)
+
+        """
         bins = np.arange(
             round(self.mass_range[0]),
             round(self.mass_range[1]),
@@ -78,7 +77,7 @@ class SpectrumListProcessor(SpectrumList):
 
         def _make_bins():
             binned_masses = {b: [] for b in bins}
-            for spectrum in self.to_list():
+            for spectrum in self.tolist():
                 sm = np.array(spectrum.masses)
                 for b in bins:
                     m_bins = np.logical_and(sm >= b, sm <= (b + bin_size))
@@ -103,17 +102,17 @@ class SpectrumListProcessor(SpectrumList):
                 elif mass_statistic == "median":
                     bins[idx] = np.median(values)
 
-        if len(self.to_list()) <= 2 or n_jobs == 1:
-            binned_spectra = [_bin(s) for s in self.to_list()]
+        if len(self.tolist()) <= 2 or n_jobs == 1:
+            binned_spectra = [_bin(s) for s in self.tolist()]
         else:
             pool = Pool(n_jobs)
-            binned_spectra = pool.map(_bin, self.to_list())
+            binned_spectra = pool.map(_bin, self.tolist())
 
         # TODO: This is awful. Needs to be reimplemented.
         if inplace is True:
             for result in binned_spectra:
                 binned_masses, binned_intensities, id = result
-                for spectrum in self.to_list():
+                for spectrum in self.tolist():
                     if spectrum.id == id:
                         spectrum.masses = binned_masses
                         spectrum.intensities = binned_intensities
@@ -130,6 +129,9 @@ class SpectrumListProcessor(SpectrumList):
             return pd.DataFrame(ints, columns=masses, index=ids)
 
     def scale(self, method="mc", inplace=True):
+        """
+
+        """
         def __mean_center(_i):
             return _i - np.mean(_i)
 
@@ -159,16 +161,16 @@ class SpectrumListProcessor(SpectrumList):
             self.pandas_to_spectrum(df)
 
     def normalise(self, method="tic"):
-        for spectrum in self.to_list():
+        for spectrum in self.tolist():
             spectrum._normalise(method=method)
 
     def transform(self, method="nlog"):
-        for spectrum in self.to_list():
+        for spectrum in self.tolist():
             spectrum._transform(method=method)
 
     def value_imputation(self, method="basic", threshold=0.5, inplace=True):
         def _remove_bins_by_threshold():
-            df = self.spectrum_list.flatten_to_dataframe()
+            df = self._spectrum_list.flatten_to_dataframe()
 
             nc = df.isnull().sum()
             _threshold = len(df.index.values) * threshold
@@ -208,8 +210,3 @@ class SpectrumListProcessor(SpectrumList):
             self._value_imputated = True
         else:
             return df
-
-
-    def to_spectrumlist(self):
-        from SpectrumList import SpectrumList
-        return SpectrumList(self.to_list())
