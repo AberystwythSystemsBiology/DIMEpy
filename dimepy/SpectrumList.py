@@ -3,6 +3,7 @@ import pandas as pd
 import cPickle as pkl
 import collections
 import csv
+from scipy.stats import binned_statistic
 from copy import copy
 import numpy as np
 from Spectrum import Spectrum
@@ -36,8 +37,11 @@ class SpectrumList(object):
         ----------
 
         threshold : float, optional (default=3)
+            Value to calculate outlier threshold (the mean absolute deviation
+            times the given threshold)
 
         plot : boolean, optional (default=False)
+            Whether or not to plot the outlier detection process.
 
         inplace : boolean, optional (default=True)
             If False then return the outlier detected SpectrmList, else make the
@@ -81,6 +85,106 @@ class SpectrumList(object):
         else:
             return self.delete(outliers, inplace=False)
 
+
+
+    def binning(self, bin_size=0.25, int_statistic="median", mass_statistic="mean",
+                inplace=True):
+        """Perform mass-binning.
+
+        Parameters
+        ----------
+
+        bin_size : float, optional (default=0.25)
+            Mass-to-ion bin size to use for binning.
+
+        int_statistic : string, optional (default="median")
+            The method used to calculate the binned intensitiy value.
+
+            - If mean, calculated as the mean all spectrum intensity values for
+              a given bin.
+            - If median, calculated as the median of all spectrum intensity values for
+              a given bin.
+
+        mass_statistic : string, optional (default="mean")
+            The method used to calculate the binned mass value.
+
+            - If mean, calculated as the mean all spectrum mass values for
+              a given bin.
+            - If median, calculated as the median of all spectrum mass values for
+             a given bin.
+
+        inplace : boolean, optional (default=True)
+            If False then return the binned Spectrums, else make the
+            change within the object.
+
+        """
+
+        def _generate_ranged_bins():
+            mass_range = self.get_mass_range()
+            return np.arange(mass_range[0], mass_range[1], step=bin_size)
+
+        def _calculate_mass_values(bins):
+            mass_values = {b: [] for b in bins}
+            for spectrum in self._spectrum:
+                m = spectrum.masses
+                for b in bins:
+                    bindx = np.logical_and(m >= b, m <= (b+bin_size))
+                    mass_values[b].extend(m[bindx])
+            calculated_mass_values = []
+            for bin, values in mass_values.iteritems():
+                if values == []:
+                    calculated_mass_values.append(bin)
+                else:
+                    method = getattr(np, mass_statistic)
+                    calculated_mass_values.append(method(values))
+            return sorted(mass_values)
+
+        def _apply_binning(spectrum, bins):
+            b_i, b_m, b_n = binned_statistic(
+                spectrum.masses,
+                spectrum.intensities,
+                bins=bins,
+                statistic=int_statistic
+            )
+            indx = np.invert(np.isnan(b_i))
+
+            return b_m[:-1][indx], b_i[indx]
+
+        bins = _generate_ranged_bins()
+
+        if mass_statistic != None:
+            bins = _calculate_mass_values(bins)
+
+        if inplace == False:
+            t_sl = SpectrumList()
+
+        for spectrum in self._spectrum:
+            bins, intensities = _apply_binning(spectrum, bins)
+            if inplace:
+                spectrum.masses = bins
+                spectrum.intensities = intensities
+            else:
+                t_s = copy(spectrum)
+                t_s.masses = bins
+                t_s.intensities = intensities
+                t_sl.append(t_s)
+        if inplace == False:
+            return t_sl
+
+    def normalise(self, method="tic"):
+        """
+
+        """
+        for spectrum in self.tolist():
+            spectrum._normalise(method=method)
+
+    def transform(self, method="nlog"):
+        """
+
+        """
+        for spectrum in self.tolist():
+            spectrum._transform(method=method)
+
     def append(self, s):
         """Append Spectrum to the end of the SpectrumList.
 
@@ -109,7 +213,7 @@ class SpectrumList(object):
             pkl.dump(self, outfile, pkl.HIGHEST_PROTOCOL)
 
     def delete(self, s, inplace=True):
-        """Remove a given Spectrum object from the list.
+        """Remove given Spectrum from the SpectrumList.
 
         Parameters
         ----------

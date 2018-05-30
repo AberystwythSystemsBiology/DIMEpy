@@ -60,14 +60,30 @@ class SpectrumListProcessor(SpectrumList):
         ----------
 
         bin_size : float, optional (default=0.25)
+            Mass-to-ion bin size to use for binning.
 
         int_statistic : string, optional (default="median")
+            The method used to calculate the binned intensitiy value.
+
+            - If mean, calculated as the mean all spectrum intensity values for
+              a given bin.
+            - If median, calculated as the median of all spectrum intensity values for
+              a given bin.
 
         mass_statistic : string, optional (default="mean")
+            The method used to calculate the binned mass value.
+
+            - If mean, calculated as the mean all spectrum mass values for
+              a given bin.
+            - If median, calculated as the median of all spectrum mass values for
+              a given bin.
 
         inplace : boolean, optional (default=True)
+            If False then return the binned Spectrums, else make the
+            change within the object.
 
         n_jobs : integer, optional (default=1)
+            Number of threads to use to perform binning.
 
         """
         bins = np.arange(
@@ -100,7 +116,7 @@ class SpectrumListProcessor(SpectrumList):
                 if mass_statistic == "mean":
                     bins[idx] = np.mean(values).tolist()
                 elif mass_statistic == "median":
-                    bins[idx] = np.median(values)
+                    bins[idx] = np.median(values).tolist()
 
         if len(self.tolist()) <= 2 or n_jobs == 1:
             binned_spectra = [_bin(s) for s in self.tolist()]
