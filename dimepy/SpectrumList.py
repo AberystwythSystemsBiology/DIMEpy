@@ -171,19 +171,72 @@ class SpectrumList(object):
         if inplace == False:
             return t_sl
 
-    def normalise(self, method="tic"):
-        """
+    def normalise(self, method="tic", inplace=True):
+        """Helper method to apply normalisation across all Spectrum objects
+        within the SpectrumList.
+
+        Normalisation aims to remove sources of variability within the spectrum.
+
+
+        Parameters
+        ---------
+
+        method : string, optional (default="tic")
+            Method to use for normalisation.
+
+            - If "tic" then apply TIC normalisation.
+            - If "median" then apply normalisation by the median.
+
+        inplace : boolean, optional (default=True)
+            If False then return normalised intensities, else make the
+            change within the object.
 
         """
-        for spectrum in self.tolist():
-            spectrum._normalise(method=method)
+
+        if inplace == True:
+            for spectrum in self.tolist():
+                spectrum._normalise(method=method)
+        else:
+            t_sl = copy(self)
+            for spectrum in t_sl.tolist():
+                spectrum._normalise(method=method)
+            return t_sl
 
     def transform(self, method="nlog"):
-        """
+        """Helper method to apply transformation across all Spectrum objects
+        within the SpectrumList.
+
+        Transformation aims to make the data less skewed.
+
+        Parameters
+        ----------
+
+        method : string, optional (default="log10")
+            Method to use for transformation.
+
+            - If "log10" then apply log10 transformation.
+            - If "cube" then apply cube transformation.
+            - If "nglog" then apply nlog transformation.
+            - If "log2" then apply log2 transformation.
+            - If "glog" then apply globalised log transformation.
+            - If "sqrt" then apply square root-based transformation.
+            - If "ihs" then apply inverse hyperbolic sine transformation.
+
+        inplace : boolean, optional (default=True)
+            If False then return normalised intensities, else make the
+            change within the object.
 
         """
-        for spectrum in self.tolist():
-            spectrum._transform(method=method)
+
+        if inplace == True:
+            for spectrum in self.tolist():
+                spectrum._transform(method=method)
+        else:
+            t_sl = copy(self)
+            for spectrum in t_sl.tolist():
+                spectrum._transform(method=method)
+            return t_sl
+
 
     def append(self, s):
         """Append Spectrum to the end of the SpectrumList.
@@ -268,6 +321,9 @@ class SpectrumList(object):
             output.close()
 
     def flatten_to_dataframe(self):
+        """
+
+        """
         output = []
         for spectrum in self.tolist():
             df = pd.DataFrame(spectrum.intensities).T
@@ -277,9 +333,15 @@ class SpectrumList(object):
         return pd.concat(output, axis=0)
 
     def tolist(self):
+        """
+
+        """
         return self._spectrum
 
     def pandas_to_spectrum(self, df):
+        """
+
+        """
         masses = df.columns
         for id, values in df.iterrows():
             intensities = values.values
@@ -288,6 +350,9 @@ class SpectrumList(object):
             spectrum.intensities = intensities
 
     def get_mass_range(self):
+        """
+
+        """
         smallest = None
         largest = None
 
@@ -298,6 +363,3 @@ class SpectrumList(object):
                 largest = max(spectrum.masses)
 
         return smallest, largest
-
-    def __repr__(self):
-        return repr(self.to_list())

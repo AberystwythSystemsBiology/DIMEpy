@@ -260,6 +260,14 @@ class Spectrum(object):
         else:
             return normalised_intensities
 
+    def bin(self, bin_size=0.25, int_statistic="median", mass_statistic="mean", inplace=True):
+        """
+
+        """
+
+        pass
+
+
     def transform(self, method="log10", inplace=True):
         """Application of transformation over spectrum intensities.
 
