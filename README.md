@@ -63,7 +63,7 @@ for index, file in enumerate(os.listdir(mzMLpaths)):
   # Load in the spectrum directly using default parameters.
   spectrum = dimepy.Spectrum(os.path.join(mzMLpaths, file))
   # Correct for baseline.
-  spectrum.baseline_correction(qtl=0.4)
+  spectrum.baseline_correction(qtl=0.6)
   spectrum_list.append(spectrum)
 
 # Write the raw spectrum to a comma seperated file.

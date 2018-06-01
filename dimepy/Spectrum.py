@@ -17,9 +17,6 @@ import matplotlib.pyplot as plt
 from operator import itemgetter
 from Scans import Scans
 
-np.seterr("ignore")
-
-
 class Spectrum(object):
     """A Spectrum class.
 

@@ -322,6 +322,29 @@ class SpectrumList(object):
 
 
     def value_imputation(self, method="basic", threshold=0.5, inplace=True):
+        """Value imputator to replace missing values, and remove masses of which
+        aren't imputatable.
+
+        Parameters
+        ---------
+
+        method : string, optional (default="basic")
+            Method for applying mass imputation.
+
+            - If "basic" then imputate half the minimum intensity for the given
+              spectrum.
+            - If "mean" then imputate using the mean intensity for the given spectrum.
+            - If "min" then imputate using the minimum intensity for the given spectrum.
+            - If "median" then imputate using the median intensity for the given spectrum.
+
+        threshold : float, optional (default=0.5)
+            The threshold for the minimum number of missing intensities within a given mass.
+
+        inplace : boolean, optional (default=True)
+            If False then return a value imputated SpectrumList, else make the
+            change within the object.
+
+        """
         def _remove_by_threshold(df):
             null_count = df.isnull().sum()
             _t = len(df.index.values) * threshold
@@ -339,9 +362,10 @@ class SpectrumList(object):
                     filler = np.nanmin(i)
                 elif method.upper() == "MEDIAN":
                     filler = np.nanmedian(i)
+                else:
+                    raise ValueError("%s is not a valid imputation method." %method)
                 df.ix[identifier] = df.ix[identifier].replace(np.nan, filler)
             return df
-
 
         df = self.to_dataframe()
 
