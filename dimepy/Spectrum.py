@@ -9,13 +9,11 @@ import pandas as pd
 import operator
 import pymzml
 from scipy.stats.mstats import mquantiles
-from scipy.sparse import csc_matrix, eye, diags
-from scipy.sparse.linalg import spsolve
-from scipy.interpolate import interp1d
 import warnings
 import matplotlib.pyplot as plt
 from operator import itemgetter
 from Scans import Scans
+
 
 class Spectrum(object):
     """A Spectrum class.
@@ -106,7 +104,7 @@ class Spectrum(object):
                  label=None):
 
         self.fp = fp
-        if polarity != None:
+        if polarity is not None:
             self.polarity = polarity.upper()
         else:
             self.polarity = polarity
@@ -116,11 +114,11 @@ class Spectrum(object):
         self.type = type
         self.label = label
 
-        if self.fp != None:
+        if self.fp is not None:
             self._load_from_file()
             if id is None:
                 self._get_id_from_fp()
-        if id == None:
+        if id is None:
             self.id = id
 
         if injection_order is not None:
@@ -149,10 +147,11 @@ class Spectrum(object):
     def baseline_correction(self, wsize=50, qtl=0.1, inplace=True):
         """Application of baseline correction over the spectrum intensities.
 
-        Intensities are divided into equally spaced windows, where a local minimum
-        intensity value (intervals are used to remove noise) is calculated as a baseline
-        estimate for this region. The whole baseline is then computed through the use
-        of linear interpolation via the central pairs of each interval.
+        Intensities are divided into equally spaced windows, where a local
+        minimum intensity value (intervals are used to remove noise) is
+        calculated as a baseline estimate for this region. The whole baseline
+        is then computed through the use of linear interpolation via the
+        central pairs of each interval.
 
         Parameters
         ----------
@@ -202,10 +201,10 @@ class Spectrum(object):
             bl = np.interp(self.intensities, ymz, ymax)
             return bl
 
-        if self._baseline_corrected != True:
+        if self._baseline_corrected is not True:
             bl = bc()
             baseline_corrected = self.intensities - bl
-            if inplace == True:
+            if inplace is True:
                 indx = baseline_corrected > 0
                 self.masses = self.masses[indx]
                 self.intensities = baseline_corrected[indx]
@@ -218,7 +217,7 @@ class Spectrum(object):
     def normalise(self, method="tic", inplace=True):
         """Application of normalisation over spectrum intensities.
 
-        Normalisation aims to remove sources of variability within the spectrum.
+        Normalisation aims to remove sources of variability within the spectrum
 
         Parameters
         ----------
@@ -251,7 +250,7 @@ class Spectrum(object):
         else:
             raise Exception("%s already normalised" % self.id)
 
-        if inplace == True:
+        if inplace is True:
             self.intensities = normalised_intensities
             self._normalised = True
         else:
@@ -331,11 +330,11 @@ class Spectrum(object):
 
         scans = Scans(self.fp, self.snr_estimator, self.max_snr, self.type)
 
-        if self.polarity != None:
+        if self.polarity is not None:
             indx = scans.polarities == self.polarity
             scans.limiter(indx)
 
-        if self.apex_mad != None:
+        if self.apex_mad is not None:
             __get_apex(scans)
 
         masses, intensities = zip(*scans.scans)
@@ -375,11 +374,11 @@ class Spectrum(object):
         plt.title(self.id)
         plt.xlabel("Mass-to-ion (m/z)")
         plt.ylim(0, max(self.intensities))
-        if self._normalised == True and self._transformed == False:
+        if self._normalised is True and self._transformed is False:
             plt.ylabel("Normalised Intensity")
-        elif self._normalised == False and self._transformed == True:
+        elif self._normalised is False and self._transformed is True:
             plt.ylabel("Transformed Intensity")
-        elif self._normalised == True and self._transformed == True:
+        elif self._normalised is True and self._transformed is True:
             plt.ylabel("Processed Intensity")
         else:
             plt.ylabel("Intensity")

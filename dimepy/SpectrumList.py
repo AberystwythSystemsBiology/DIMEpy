@@ -87,6 +87,7 @@ class SpectrumList(object):
             _plot(outliers)
 
         if inplace == True:
+            self._outlier_detected = True
             self.delete(outliers)
         else:
             return self.delete(outliers, inplace=False)
@@ -158,10 +159,10 @@ class SpectrumList(object):
 
         bins = _generate_ranged_bins()
 
-        if mass_statistic != None:
+        if mass_statistic is not None:
             bins = _calculate_mass_values(bins)
 
-        if inplace == False:
+        if inplace is False:
             t_sl = SpectrumList()
 
         for spectrum in self._spectrum:
@@ -174,7 +175,7 @@ class SpectrumList(object):
                 t_s.masses = bins
                 t_s.intensities = intensities
                 t_sl.append(t_s)
-        if inplace == False:
+        if inplace is False:
             return t_sl
         else:
             self._binned = True
@@ -201,7 +202,7 @@ class SpectrumList(object):
 
         """
 
-        if inplace == True:
+        if inplace is True:
             for spectrum in self.tolist():
                 spectrum._normalise(method=method)
             self._normalised = True
@@ -237,7 +238,7 @@ class SpectrumList(object):
 
         """
 
-        if inplace == True:
+        if inplace is True:
             for spectrum in self.tolist():
                 spectrum._transform(method=method)
             self._transformed = True
@@ -298,7 +299,8 @@ class SpectrumList(object):
 
         sl = self.dataframe_to_spectrum_list(df)
 
-        if inplace == True:
+        if inplace is True:
+            self._scaled = True
             self._spectrum = sl._spectrum
         else:
             return sl
@@ -320,7 +322,6 @@ class SpectrumList(object):
                 "%s is not a valid object type, need Spectrum object" %
                 type(s))
 
-
     def value_imputation(self, method="basic", threshold=0.5, inplace=True):
         """Value imputator to replace missing values, and remove masses of which
         aren't imputatable.
@@ -333,12 +334,16 @@ class SpectrumList(object):
 
             - If "basic" then imputate half the minimum intensity for the given
               spectrum.
-            - If "mean" then imputate using the mean intensity for the given spectrum.
-            - If "min" then imputate using the minimum intensity for the given spectrum.
-            - If "median" then imputate using the median intensity for the given spectrum.
+            - If "mean" then imputate using the mean intensity for the given
+              spectrum.
+            - If "min" then imputate using the minimum intensity for the given
+              spectrum.
+            - If "median" then imputate using the median intensity for the
+              given spectrum.
 
         threshold : float, optional (default=0.5)
-            The threshold for the minimum number of missing intensities within a given mass.
+            The threshold for the minimum number of missing intensities within
+            a given mass.
 
         inplace : boolean, optional (default=True)
             If False then return a value imputated SpectrumList, else make the
@@ -363,7 +368,9 @@ class SpectrumList(object):
                 elif method.upper() == "MEDIAN":
                     filler = np.nanmedian(i)
                 else:
-                    raise ValueError("%s is not a valid imputation method." %method)
+                    raise ValueError(
+                        "%s is not a valid imputation method." % method
+                        )
                 df.ix[identifier] = df.ix[identifier].replace(np.nan, filler)
             return df
 
@@ -377,11 +384,11 @@ class SpectrumList(object):
 
         sl = self.dataframe_to_spectrum_list(df)
 
-        if inplace == True:
+        if inplace is True:
             self._spectrum = sl._spectrum
+            self._value_imputated = True
         else:
             return sl
-
 
     def to_pickle(self, fp):
         """Dump the SpectrmList to a pickled object.
@@ -409,7 +416,7 @@ class SpectrumList(object):
             change within the object.
 
         """
-        if inplace == True:
+        if inplace is True:
             if type(s) == Spectrum:
                 self._spectrum.remove(s)
             elif type(s) == type([]):

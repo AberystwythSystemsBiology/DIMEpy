@@ -6,7 +6,12 @@ import numpy as np
 
 
 class Scans(object):
-    """
+    """A Scans object, containing scan information for a given file.
+
+    Note
+    ----
+
+    Not supposed to be implemented outside of DIMEpy.
 
     """
     __scans = []
@@ -31,7 +36,9 @@ class Scans(object):
         if splitext(self.fp)[1].upper() == ".MZML":
             self.__from_mzml()
         else:
-            raise NotImplementedError("DIMEpy currently only supports mzML files")
+            raise NotImplementedError(
+                "DIMEpy currently only supports mzML files"
+                )
 
     def __from_mzml(self):
         """
@@ -50,7 +57,7 @@ class Scans(object):
         def __which_polarity(scan):
             polarity = None
             for pol, _ in eA:
-                if scan.get(pol) != None:
+                if scan.get(pol) is not None:
                     if pol == "MS:1000129":
                         polarity = "NEGATIVE"
                     elif pol == "MS:1000130":
@@ -67,9 +74,9 @@ class Scans(object):
 
         def __get_scans(reader, eA):
             for scan in reader:
-                if scan["ms level"] != None:
+                if scan["ms level"] is not None:
                     masses, intensities = __get_ints_and_masses(scan)
-                    if self.snr_estimator != None:
+                    if self.snr_estimator is not None:
                         masses, intensities = __apply_snr_filtering(
                             scan, masses, intensities)
                     polarity = __which_polarity(scan)
@@ -94,7 +101,6 @@ class Scans(object):
         self.__scans = np.array(self.__scans)[indx].tolist()
         self.__polarities = np.array(self.__polarities)[indx].tolist()
         self.__tics = np.array(self.__tics)[indx].tolist()
-
 
     @property
     def scans(self):
