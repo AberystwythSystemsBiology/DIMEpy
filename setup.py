@@ -29,7 +29,7 @@ setup(
         "Programming Language :: Python :: 2.7",
         "Development Status :: 2 - Pre-Alpha",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
-        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)"",
+        "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers"
