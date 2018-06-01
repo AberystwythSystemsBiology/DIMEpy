@@ -1,7 +1,5 @@
 # DIMEpy: Direct Infusion MEtablomics (DIME) Processing in Python
 
-**HERE BE DRAGONS:** This project is largely undocumented and untested, I do aim on sorting it all out eventually.
-
 Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry from ```mzML``` files.
 
 Implementation of the methods detailed in:
@@ -65,30 +63,26 @@ for index, file in enumerate(os.listdir(mzMLpaths)):
   # Load in the spectrum directly using default parameters.
   spectrum = dimepy.Spectrum(os.path.join(mzMLpaths, file))
   # Correct for baseline.
-  spectrum.baseline_correction(qtl=0.4)
+  spectrum.baseline_correction(qtl=0.6)
   spectrum_list.append(spectrum)
 
 # Write the raw spectrum to a comma seperated file.
 spectrum_list.to_csv("raw.csv")
 # Convert the object to a SpectrumListProcessor for processing.
-processor = SpectrumListProcessor(spectrum_list)
 
 # Apply outlier detection to remove spurious samples.
-processor.outlier_detection()
+spectrum_list.outlier_detection()
 # Bin masses over 0.125 m/z.
-processor.binning(bin_size=0.125)
+spectrum_list.binning(bin_size=0.125)
 # Value imputate where < 50% of the values are lost across all samples.
-processor.value_imputation(method="basic", threshold=0.5)
+spectrum_list.value_imputation(method="basic", threshold=0.5)
 # Normalise over the total ion count.
-processor.normalise(method="TIC")
+spectrum_list.normalise(method="TIC")
 # Apply generalised log transformation
-processor.transform(method="glog")
-
-# Convert back to SpectrumList object.
-processed_sl = processor.to_spectrumlist()
+spectrum_list.transform(method="glog")
 
 # Write the processed spectrum to a comma seperated file.
-processed_sl.to_csv("processed.csv")
+spectrum_list.to_csv("processed.csv")
 ```
 
 ## License

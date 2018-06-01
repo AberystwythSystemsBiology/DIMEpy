@@ -1,32 +1,86 @@
 # -*- coding: utf-8 -*-
+
 import os
-from math import floor
+from math import floor, asinh
 from collections import defaultdict
 from copy import copy
 import numpy as np
-from scipy.stats.mstats import mquantiles
 import pandas as pd
 import operator
 import pymzml
-from scipy.sparse import csc_matrix, eye, diags
-from scipy.sparse.linalg import spsolve
-from scipy.interpolate import interp1d
+from scipy.stats.mstats import mquantiles
 import warnings
 import matplotlib.pyplot as plt
 from operator import itemgetter
+from Scans import Scans
 
-np.seterr("ignore")
 
 class Spectrum(object):
-    """Summary of class here.
+    """A Spectrum class.
 
-    Longer class information...
+    This is a class that holds, manages, and manipulates mass spectrometry
+    information.
 
-    Attributes:
-        something: description of said thing.
+
+    Parameters
+    ----------
+
+    fp : string, optional (default=None)
+        Filepath to file of interest.
+
+    id : string, optional (default=None)
+        An identifier for the Spectrum.
+        Note: if None is given one will be generated from the file path.
+
+    polarity : string, optional (default=None)
+        Polarity for fast polarity switching.
+
+        - If "positive" then only positive ion scans will be read.
+        - If "negative" then only negative ion scans will be read.
+        - If None, all ion scans will be read.
+
+    type : string, optional (default="peaks")
+        Set what type of peaks you want to read into the Spectrum object.
+
+        - If "peaks" then return all peaks of the spectrum.
+        - If "centroidedPeaks" then return a centroided version of the
+          profile spectrum.
+        - If "reprofiledPeaks" then return a version a centroided spectrum.
+
+    apex_mad : integer, optional (default=None)
+        This method implements an 'automated' apex method akin to FIEmspro.
+
+        - If None then return all scans as a single matrix.
+        - If integer/float, then return all scans whose TIC are equal to or
+          greater than the mean absolute deviation times the given value.
+
+    snr_estimator : string, optional (default=None)
+        Apply signal to noise filtering.
+
+        - If None, then do not apply signal to noise filtering.
+        - If "mad" then perform mean absolute deviation-based noise filtering.
+        - If "mean" then perform mean-based noise filtering.
+        - If "median" then perform median-based noise filtering.
+
+    max_snr : float, optional (default=2.5)
+        Value to use for signal to noise ratio filtering. If calculated snr is
+        greater than or equal to the given value - then the signal will be
+        removed.
+
+    injection_order : integer, optional (default=None)
+        The injection order of the Spectrum file.
+
+    label : string, optional (default=None)
+        Class label.
+
+    Attributes
+    ----------
+
+    masses : array of shape = [n_masses] containing mass-to-ion data.
+    intensities : array of shape = [n_intensities] containing intensity data.
+    tic : integer calculated by summing the intensities.
 
     """
-    polarity_dict = {"POSITIVE": "MS:1000130", "NEGATIVE": "MS:1000129"}
 
     _loaded = False
 
@@ -35,121 +89,150 @@ class Spectrum(object):
     _scaled = False
     _baseline_corrected = False
 
-    _injection_order = None
-
     masses = np.array([])
     intensities = np.array([])
 
-    __raw_spectrum = None
-
     def __init__(self,
-                 file_path=None,
+                 fp=None,
                  id=None,
                  polarity=None,
                  type="peaks",
-                 min_mz=50.0,
-                 max_mz=5000,
-                 apex=False,
-                 apex_mad=2,
-                 snr_estimator="median",
+                 apex_mad=None,
+                 snr_estimator=None,
                  max_snr=2.5,
-                 injection_order=None):
-        """Inits a Spectrum.
+                 injection_order=None,
+                 label=None):
 
-        Forms a Spectrum object, contained masses and intensities..
-
-        Args:
-            file_path:
-            id:
-            polarity:
-            type:
-            apex:
-            injection_order:
-
-        """
-        self.file_path = file_path
-        if id is None and self.file_path != None:
-            self._get_id_from_fp()
+        self.fp = fp
+        if polarity is not None:
+            self.polarity = polarity.upper()
         else:
-            self.id = id
-
-        if injection_order is not None:
-            self._injection_order = int(injection_order)
-        else:
-            self._injection_order = 0
-        self.apex = apex
+            self.polarity = polarity
         self.apex_mad = apex_mad
         self.max_snr = max_snr
         self.snr_estimator = snr_estimator
         self.type = type
-        self.min_mz = min_mz
-        self.max_mz = max_mz
-        self.polarity = polarity
-        if self.file_path != None:
+        self.label = label
+
+        if self.fp is not None:
             self._load_from_file()
-        self._normalised = False
-        self._transformed = False
-        self._baseline_corrected = False
-        self._scaled = False
+            if id is None:
+                self._get_id_from_fp()
+        if id is None:
+            self.id = id
+
+        if injection_order is not None:
+            self.injection_order = int(injection_order)
+        else:
+            self.injection_order = 0
+
+    @property
+    def tic(self):
+        return sum(self.intensities)
 
     def _get_id_from_fp(self):
-        """Description of method.
+        """Provides a spectrum identifier from the file_path attribute.
 
-        Longer description of method.
+        If no id is passed, then the the filename (minus the file extension)
+        will be used as the identifier.
+
+        Notes
+        -----
+
+        Should not be called outside of this class.
+
         """
-        self.id = os.path.splitext(os.path.basename(self.file_path))[0]
+        self.id = os.path.splitext(os.path.basename(self.fp))[0]
 
     def baseline_correction(self, wsize=50, qtl=0.1, inplace=True):
-        """Description of method.
+        """Application of baseline correction over the spectrum intensities.
 
-        Longer description of method.
+        Intensities are divided into equally spaced windows, where a local
+        minimum intensity value (intervals are used to remove noise) is
+        calculated as a baseline estimate for this region. The whole baseline
+        is then computed through the use of linear interpolation via the
+        central pairs of each interval.
 
-        - Implementation of https://github.com/aberHRML/FIEmspro
-        /blob/482e63b6fe2f6f3e203561a66372d1af21171e4a/R/onebc.R
+        Parameters
+        ----------
+
+        wsize : integer (default=50)
+            Window size to be used for indexing over intensities.
+
+        qtl : float (default=0.1)
+            A value to be used to calculate the lower quantile probabilitiy.
+
+        inplace : boolean, optional (default=True)
+            If False then return the corrected intensities array, else make the
+            change within the object.
+
+        Notes
+        -----
+
+        Python implementation of onebc.R from FIEmspro.
+
         """
 
         def bc():
             # TODO: Pythonise this.
             x = self.intensities
             nmz = len(x)
-            addini = floor(nmz%wsize/2)
-            i = np.arange(addini+wsize, nmz-wsize, wsize)
-            i = np.insert(i, 0 , 0)
-            j = np.arange(addini+wsize, nmz-wsize, wsize)
+            addini = floor(nmz % wsize / 2)
+            i = np.arange(addini + wsize, nmz - wsize, wsize)
+            i = np.insert(i, 0, 0)
+            j = np.arange(addini + wsize, nmz - wsize, wsize)
             j = np.append(j, nmz)
-            interv = pd.DataFrame(zip(*[i,j]))
-            interv = interv.append(interv.iloc[1:]-floor(wsize/2), ignore_index=True)
+            interv = pd.DataFrame(zip(*[i, j]))
+            interv = interv.append(
+                interv.iloc[1:] - floor(wsize / 2), ignore_index=True)
             interv = interv.sort_values(0, ascending=True)
             y_max = []
             for _, k in interv.iterrows():
-                k_b = x[int(k[0]) : int(k[1])]
+                k_b = x[int(k[0]):int(k[1])]
                 y_max.append(mquantiles(k_b, prob=qtl)[0])
-            #ymz = interv.iloc[::2, :].mean(axis=1).values
+            ymz = interv.iloc[::2, :].mean(axis=1).values
 
             ymz = interv.mean(axis=1).values
             ymz = np.insert(ymz, 0, 0)
             ymz = np.append(ymz, nmz)
-            ymax = [y_max[0]] + y_max[0:] + [y_max[len(interv.index.values)-1]]
+            ymax = [y_max[0]
+                    ] + y_max[0:] + [y_max[len(interv.index.values) - 1]]
 
             bl = np.interp(self.intensities, ymz, ymax)
             return bl
 
-        bl = bc()
-        baseline_corrected = self.intensities-bl
-        if inplace == True:
-            indx = baseline_corrected > 0
-            self.masses = self.masses[indx]
-            self.intensities = baseline_corrected[indx]
+        if self._baseline_corrected is not True:
+            bl = bc()
+            baseline_corrected = self.intensities - bl
+            if inplace is True:
+                indx = baseline_corrected > 0
+                self.masses = self.masses[indx]
+                self.intensities = baseline_corrected[indx]
+                self._baseline_corrected = True
+            else:
+                return baseline_corrected
         else:
-            return baseline_corrected
+            raise Exception("%s has already been baseline corrected" % self.id)
 
-    def _normalise(self, method="tic"):
-        '''
+    def normalise(self, method="tic", inplace=True):
+        """Application of normalisation over spectrum intensities.
 
-        :param method:
-        :param inplace:
-        :return:
-        '''
+        Normalisation aims to remove sources of variability within the spectrum
+
+        Parameters
+        ----------
+
+        method : string, optional (default="tic")
+            Method to use for normalisation.
+
+            - If "tic" then apply TIC normalisation.
+            - If "median" then apply normalisation by the median.
+
+        inplace : boolean, optional (default=True)
+            If False then return normalised intensities, else make the
+            change within the object.
+
+        """
 
         if self._normalised is False:
             if method.upper() == "TIC":
@@ -161,21 +244,42 @@ class Spectrum(object):
                 normalised_intensities = np.array(
                     [x - median_intensity for x in self.intensities]) * 1000
             else:
-                normalised_intensities = self.intensities
+                raise ValueError(
+                    "%s is not a supported normalisation method" % method)
+
         else:
-            warnings.warn("Warning: %s already normalised, ignoring" % self.id)
-            normalised_intensities = self.intensities
+            raise Exception("%s already normalised" % self.id)
 
-        self.intensities = normalised_intensities
-        self._normalised = True
+        if inplace is True:
+            self.intensities = normalised_intensities
+            self._normalised = True
+        else:
+            return normalised_intensities
 
-    def _transform(self, method="log10", inplace=True):
-        '''
+    def transform(self, method="log10", inplace=True):
+        """Application of transformation over spectrum intensities.
 
-        :param method:
-        :param inplace:
-        :return:
-        '''
+        Transformation aims to make the data less skewed.
+
+        Parameters
+        ----------
+
+        method : string, optional (default="log10")
+            Method to use for transformation.
+
+            - If "log10" then apply log10 transformation.
+            - If "cube" then apply cube transformation.
+            - If "nglog" then apply nlog transformation.
+            - If "log2" then apply log2 transformation.
+            - If "glog" then apply globalised log transformation.
+            - If "sqrt" then apply square root-based transformation.
+            - If "ihs" then apply inverse hyperbolic sine transformation.
+
+        inplace : boolean, optional (default=True)
+            If False then return normalised intensities, else make the
+            change within the object.
+
+        """
 
         if self._transformed is False:
             if method.upper() == "LOG10":
@@ -188,17 +292,20 @@ class Spectrum(object):
             elif method.upper() == "LOG2":
                 transformed_intensities = np.log2(self.intensities)
             elif method.upper() == "GLOG":
-
-                def __lognorm(x, min):
-                    return np.log2((x + np.sqrt(x**2 + min**2)) / 2)
-
-                transformed_intensities = __lognorm(self.intensities,
-                                                    min(self.intensities) / 10)
+                min = min(self.intensities) / 10
+                transformed_intensities = np.log2(self.intensities + np.sqrt(
+                    self.intensities**2 + min**2)) / 2
+            elif method.upper() == "SQRT":
+                transformed_intensities = np.array(
+                    [sqrt(x) for x in self.intensities])
+            elif method.upper() == "IHS":
+                transformed_intensities = np.array(
+                    [asinh(x) for x in self.intensities])
             else:
-                pass
+                raise ValueError(
+                    "%s is not a supported transformation method" % method)
         else:
-            warnings.warn("Warning: %s already normalised, ignoring" % self.id)
-            transformed_intensities = self.intensities
+            raise Exception("%s already transformed" % self.id)
 
         if inplace is True:
             self.intensities = transformed_intensities
@@ -207,92 +314,74 @@ class Spectrum(object):
             return transformed_intensities
 
     def _load_from_file(self):
-        def __from_mzml():
-            def __gen_reader():
-                return pymzml.run.Reader(
-                    self.file_path,
-                    extraAccessions=[["MS:1000129", ["value"]],
-                                     ["MS:1000130", ["value"]]])
+        """Method for loading a Spectrum from file.
 
-            def __get_scans_of_interest():
-                reader = __gen_reader()
-                scans = []
-                for scan_number, scan in enumerate(reader):
-                    if self.polarity != None:
-                        if scan.get(self.polarity_dict[self.polarity.upper()]
-                                    ) != None:
-                            scans.append(scan_number)
-                    else:
-                        scans.append(scan_number)
+        Notes
+        -----
 
-                reader = __gen_reader()
-                if self.apex == True:
-                    '''
-                        The following method is taken from FIEmspro, with a small
-                        amount of modification for automated selection of the
-                        infusion profile scan-ranges.
-                    '''
-                    tics = []
-                    for scan_number, scan in enumerate(reader):
-                        if scan_number in scans:
-                            tic = sum(zip(*scan.peaks)[1])
-                            tics.append([scan_number, tic])
-                    mad = np.mean(np.absolute(zip(*tics)[1] - np.mean(zip(*tics)[1])))
+        Should not be called outside of this class.
 
-                    peak_scans = [x for x in tics if x[1] >= (self.apex_mad*mad)]
-                    # I've noticed that some profiles have a strange overflow at the end
-                    # of the run, so I will look for those and discard here.
-                    peak_range_mad =  np.mean(np.absolute(zip(*peak_scans)[0] - np.mean(zip(*peak_scans)[0])))
-                    scans = [x[0] for x in peak_scans if x[0] >= peak_range_mad]
+        """
+        def __get_apex(scans):
+            tics = scans.tics
+            mad = np.mean(np.absolute(tics - np.mean(tics)))
+            indx = tics >= mad * self.apex_mad
+            scans.limiter(indx)
 
-                return scans
+        scans = Scans(self.fp, self.snr_estimator, self.max_snr, self.type)
+
+        if self.polarity is not None:
+            indx = scans.polarities == self.polarity
+            scans.limiter(indx)
+
+        if self.apex_mad is not None:
+            __get_apex(scans)
+
+        masses, intensities = zip(*scans.scans)
+        masses = np.concatenate(masses).ravel().tolist()
+        intensities = np.concatenate(intensities).ravel().tolist()
+
+        masses, intensities = zip(*sorted(zip(masses, intensities)))
+        self.masses = np.array(masses)
+        self.intensities = np.array(intensities)
+
+    def plot(self, show=True, xlim=[], scaled=False, fp=None):
+        """Method to visualise spectrum profile data using matplotlib.
 
 
-            def __get_scan(scan_range):
-                masses = []
-                intensities = []
-                reader = __gen_reader()
-                for scan_number, scan in enumerate(reader):
-                    if scan["ms level"] != None and scan_number in scan_range:
-                        m, ints = zip(*scan.peaks)
-                        m, ints = np.array(m), np.array(ints)
-                        indx = np.logical_and(np.array(m) >= self.min_mz, np.array(m) <= self.max_mz)
-                        m = m[indx]
-                        ints = ints[indx]
-                        if len(m) > 0:
-                            if self.snr_estimator != None:
-                                sn_r = np.divide(ints, scan.estimatedNoiseLevel(mode=self.snr_estimator))
-                                gq = sn_r >= self.max_snr
-                                m = m[gq]
-                                ints = ints[gq]
-                            masses.extend(m)
-                            intensities.extend(ints)
+        Parameters
+        ----------
 
-                masses, intensities = zip(*sorted(zip(masses, intensities)))
-                masses, intensities = np.array(masses), np.array(intensities)
-                non_z = [intensities != 0]
-                return masses[non_z], intensities[non_z]
+        show : boolean, optional (default=True)
+            Whether or not to print the plot to screen.
 
-            scan_range = __get_scans_of_interest()
-            self.masses, self.intensities = __get_scan(scan_range)
+        xlim : list, optional (default=[])
+            Mass boundaries for plotting purposes, for example
+            passing [50,500] would limit the plot to everything between those
+            mass-to-ion values.
 
+        scaled : boolean, optional (default=False)
+             Whether or not to scale the intensities from 0 to 1.
 
-        if self.file_path.upper().endswith("MZML"):
-            __from_mzml()
-        elif self.file_path.upper().endswith("CSV"):
-            print "CSV not implemented"
-        elif self.file_path.upper().endswith("PKL"):
-            print "PKL not implemented"
-        else:
-            raise Exception()
+        fp : string, optional (default=None)
+            If provided, where to save the plot. Can accept all standard
+            matplotlib outputs.
 
-    def plot(self, show=True, xlim=[], scaled=False, file_path=None):
+            - If None then do not save to file.
+
+        """
         plt.figure()
         plt.title(self.id)
         plt.xlabel("Mass-to-ion (m/z)")
         plt.ylim(0, max(self.intensities))
-        plt.ylabel("Intensity")
-
+        if self._normalised is True and self._transformed is False:
+            plt.ylabel("Normalised Intensity")
+        elif self._normalised is False and self._transformed is True:
+            plt.ylabel("Transformed Intensity")
+        elif self._normalised is True and self._transformed is True:
+            plt.ylabel("Processed Intensity")
+        else:
+            plt.ylabel("Intensity")
         if xlim == []:
             xlim = [min(self.masses), max(self.masses)]
             plt.ylim(0, max(self.intensities))
@@ -307,8 +396,8 @@ class Spectrum(object):
             plt.ylim(0, max(scaled_intensities))
             plt.ylabel("Scaled Intensity")
         plt.tight_layout()
-        if file_path is not None:
-            plt.savefig(file_path)
+        if fp is not None:
+            plt.savefig(fp)
         else:
             plt.show()
         plt.clf()
