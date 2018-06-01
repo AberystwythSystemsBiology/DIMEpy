@@ -9,6 +9,7 @@ import numpy as np
 from Spectrum import Spectrum
 import matplotlib.pyplot as plt
 
+
 class SpectrumList(object):
     """An object to hold and transform spectrum objects.
 
@@ -56,7 +57,7 @@ class SpectrumList(object):
             return np.mean(np.absolute(tics - np.mean(tics)))
 
         def _find_outliers(mad):
-            return [s for s in self._spectrum if s.tic >= mad*threshold]
+            return [s for s in self._spectrum if s.tic >= mad * threshold]
 
         def _plot(outliers):
             fig, ax = plt.subplots()
@@ -65,11 +66,14 @@ class SpectrumList(object):
                 ax.annotate(outlier.id, (outlier.injection_order, outlier.tic))
             for spectrum in self._spectrum:
                 if spectrum not in outliers:
-                    plt.scatter(spectrum.injection_order, spectrum.tic, color="blue")
-                    ax.annotate(spectrum.id, (spectrum.injection_order, spectrum.tic))
+                    plt.scatter(
+                        spectrum.injection_order, spectrum.tic, color="blue")
+                    ax.annotate(spectrum.id,
+                                (spectrum.injection_order, spectrum.tic))
             for t in range(threshold):
-                l = "%s times MAD" % (t+1)
-                ax.axhline(mad*(t+1), linestyle="--", color="rgboy"[t], label=l)
+                l = "%s times MAD" % (t + 1)
+                ax.axhline(
+                    mad * (t + 1), linestyle="--", color="rgboy" [t], label=l)
             plt.ylabel("Injection Order")
             plt.xlabel("Total Ion Count")
             plt.tight_layout()
@@ -87,9 +91,10 @@ class SpectrumList(object):
         else:
             return self.delete(outliers, inplace=False)
 
-
-
-    def binning(self, bin_size=0.25, int_statistic="median", mass_statistic="mean",
+    def binning(self,
+                bin_size=0.25,
+                int_statistic="median",
+                mass_statistic="mean",
                 inplace=True):
         """Perform mass-binning.
 
@@ -130,7 +135,7 @@ class SpectrumList(object):
             for spectrum in self._spectrum:
                 m = spectrum.masses
                 for b in bins:
-                    bindx = np.logical_and(m >= b, m <= (b+bin_size))
+                    bindx = np.logical_and(m >= b, m <= (b + bin_size))
                     mass_values[b].extend(m[bindx])
             calculated_mass_values = []
             for bin, values in mass_values.iteritems():
@@ -146,8 +151,7 @@ class SpectrumList(object):
                 spectrum.masses,
                 spectrum.intensities,
                 bins=bins,
-                statistic=int_statistic
-            )
+                statistic=int_statistic)
             indx = np.invert(np.isnan(b_i))
 
             return b_m[:-1][indx], b_i[indx]
@@ -243,6 +247,61 @@ class SpectrumList(object):
                 spectrum._transform(method=method)
             return t_sl
 
+    def scale(self, method="mc", inplace=True):
+        """Apply mass scaling over the SpectrumList.
+
+        Parameters
+        ---------
+
+        method : string, optional (default="mc")
+            Method for applying mass-scaling.
+
+            - If "mc" then apply mean centered scaling.
+            - If "range" then apply ranged scaling.
+            - If "auto" then apply auto scaling.
+            - If "pareto" then apply pareto scaling.
+
+        inplace : boolean, optional (default=True)
+            If False then return a scaled SpectrumList, else make the
+            change within the object.
+
+        """
+
+        def _mean_center(i):
+            return i - np.mean(i)
+
+        def _pareto(i):
+            return _mean_center(i) / np.sqrt(np.std(i))
+
+        def _range(i):
+            return _mean_center(i) / (np.max(i) - np.min(i))
+
+        def _auto(i):
+            return _mean_center(i) / np.std(i)
+
+        df = self.to_dataframe()
+
+        for m in df:
+            i = df[m].values
+            if method.upper() == "MC":
+                s_i = _mean_center(i)
+            elif method.upper() == "RANGE":
+                s_i = _range(i)
+            elif method.upper() == "AUTO":
+                s_i = _auto(i)
+            elif method.upper() == "PARETO":
+                s_i = _pareto(i)
+            else:
+                raise NotImplementedError(
+                    "%s is not a valid scaler method" % method)
+            df[m] = s_i
+
+        sl = self.dataframe_to_spectrum(df)
+
+        if inplace == True:
+            self._spectrum = sl._spectrum
+        else:
+            return sl
 
     def append(self, s):
         """Append Spectrum to the end of the SpectrumList.
@@ -257,7 +316,33 @@ class SpectrumList(object):
         if type(s) == Spectrum:
             self._spectrum.append(s)
         else:
-            raise ValueError("%s is not a valid object type, need Spectrum object" % type(s))
+            raise ValueError(
+                "%s is not a valid object type, need Spectrum object" %
+                type(s))
+
+
+    def value_imputation(self, method="basic", threshold=0.5, inplace=True):
+        def _remove_by_threshold(df):
+            null_count = df.isnull().sum()
+            _t = len(df.index.values) * threshold
+            to_keep = null_count <= threshold
+            return df[df.columns[to_keep]]
+
+        def _apply_imputation(df):
+            for identifier in df.index:
+                i = df.ix[identifier]
+                if method.upper() == "BASIC":
+                    filler = np.nanmin(i) / 2
+                elif method.upper() == "MEAN":
+                    pass
+
+    
+        df = self.to_dataframe()
+
+        if method.upper() == "ALL":
+            threshold = 1
+
+        print _remove_by_threshold(df)
 
     def to_pickle(self, fp):
         """Dump the SpectrmList to a pickled object.
@@ -355,17 +440,33 @@ class SpectrumList(object):
         """
         return self._spectrum
 
-    def pandas_to_spectrum(self, df):
-        """
+    def dataframe_to_spectrum_list(self, df):
+        """Convert a Pandas DataFrame into a SpectrumList object.
+
+        Parameters
+        ----------
+
+        df : Pandas DataFrame
+            A Pandas DataFrame where the columns header are the masses,
+            and each row denotes an individual spectrum.
+
+        Returns
+        -------
+        df : Pandas DataFrame
+            SpectrumList object containing the loaded Spectrum Objects.
 
         """
-        masses = df.columns
+
+        t_sl = SpectrumList()
+
         for id, values in df.iterrows():
             intensities = values.values
             idx = intensities != np.nan
-            spectrum = [x for x in self.to_list() if x.id == id][0]
-            spectrum.masses = masses[idx]
-            spectrum.intensities = intensities[idx]
+            t_s = Spectrum(id=id)
+            t_s.masses = df.columns[idx]
+            t_s.intensities = intensities[idx]
+            t_sl.append(t_s)
+        return t_sl
 
     def get_mass_range(self):
         """Calculate the mass range of the entirety of the SpectrumList.

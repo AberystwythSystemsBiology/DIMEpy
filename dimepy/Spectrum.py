@@ -123,7 +123,7 @@ class Spectrum(object):
             self._load_from_file()
             if id is None:
                 self._get_id_from_fp()
-        if id != None and self.id != None:
+        if id == None:
             self.id = id
 
         if injection_order is not None:
