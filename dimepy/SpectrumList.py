@@ -47,8 +47,8 @@ class SpectrumList(object):
             Whether or not to plot the outlier detection process.
 
         inplace : boolean, optional (default=True)
-            If False then return the outlier detected SpectrmList, else make the
-            change within the SpectrmList.
+            If False then return the outlier detected SpectrmList, else make
+            the change within the SpectrmList.
 
         """
 
@@ -71,9 +71,11 @@ class SpectrumList(object):
                     ax.annotate(spectrum.id,
                                 (spectrum.injection_order, spectrum.tic))
             for t in range(threshold):
-                l = "%s times MAD" % (t + 1)
+                lbl = "%s times MAD" % (t + 1)
                 ax.axhline(
-                    mad * (t + 1), linestyle="--", color="rgboy" [t], label=l)
+                    mad * (t + 1), linestyle="--", color="rgboy" [t],
+                    label=lbl
+                    )
             plt.ylabel("Injection Order")
             plt.xlabel("Total Ion Count")
             plt.tight_layout()
@@ -83,10 +85,10 @@ class SpectrumList(object):
         mad = _calculate_mad()
         outliers = _find_outliers(mad)
 
-        if plot == True:
+        if plot is True:
             _plot(outliers)
 
-        if inplace == True:
+        if inplace is True:
             self._outlier_detected = True
             self.delete(outliers)
         else:
@@ -110,16 +112,16 @@ class SpectrumList(object):
 
             - If mean, calculated as the mean all spectrum intensity values for
               a given bin.
-            - If median, calculated as the median of all spectrum intensity values for
-              a given bin.
+            - If median, calculated as the median of all spectrum intensity
+              values for a given bin.
 
         mass_statistic : string, optional (default="mean")
             The method used to calculate the binned mass value.
 
             - If mean, calculated as the mean all spectrum mass values for
               a given bin.
-            - If median, calculated as the median of all spectrum mass values for
-             a given bin.
+            - If median, calculated as the median of all spectrum mass values
+              for a given bin.
 
         inplace : boolean, optional (default=True)
             If False then return the binned Spectrums, else make the
@@ -184,8 +186,7 @@ class SpectrumList(object):
         """Helper method to apply normalisation across all Spectrum objects
         within the SpectrumList.
 
-        Normalisation aims to remove sources of variability within the spectrum.
-
+        Normalisation aims to remove sources of variability within the spectrum
 
         Parameters
         ---------
@@ -419,14 +420,14 @@ class SpectrumList(object):
         if inplace is True:
             if type(s) == Spectrum:
                 self._spectrum.remove(s)
-            elif type(s) == type([]):
+            elif isinstance(s, list):
                 [self._spectrum.remove(x) for x in s]
 
         else:
             cs = copy(self._spectrum)
             if type(s) == Spectrum:
                 cs.remove(s)
-            elif type(s) == type([]):
+            elif isinstance(s, list):
                 [cs.remove(x) for x in s]
             return cs
 

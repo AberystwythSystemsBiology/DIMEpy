@@ -18,11 +18,7 @@ class Scans(object):
     __tics = []
     __polarities = []
 
-    def __init__(self,
-                 fp,
-                 snr_estimator,
-                 max_snr,
-                 type):
+    def __init__(self, fp, snr_estimator, max_snr, type):
         self.fp = fp
         self.snr_estimator = snr_estimator
         self.max_snr = max_snr
@@ -37,13 +33,13 @@ class Scans(object):
             self.__from_mzml()
         else:
             raise NotImplementedError(
-                "DIMEpy currently only supports mzML files"
-                )
+                "DIMEpy currently only supports mzML files")
 
     def __from_mzml(self):
         """
 
         """
+
         def __gen_reader(eA):
             return pymzml.run.Reader(self.fp, extraAccessions=eA)
 
