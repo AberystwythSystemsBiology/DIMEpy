@@ -6,6 +6,9 @@ import numpy as np
 
 
 class Scans(object):
+    """
+
+    """
     __scans = []
     __tics = []
     __polarities = []
@@ -22,12 +25,18 @@ class Scans(object):
         self._run()
 
     def _run(self):
+        """
+
+        """
         if splitext(self.fp)[1].upper() == ".MZML":
             self.__from_mzml()
         else:
             raise NotImplementedError("DIMEpy currently only supports mzML files")
 
     def __from_mzml(self):
+        """
+
+        """
         def __gen_reader(eA):
             return pymzml.run.Reader(self.fp, extraAccessions=eA)
 
@@ -73,9 +82,15 @@ class Scans(object):
         __get_scans(reader, eA)
 
     def __from_raw(self):
+        """
+
+        """
         raise NotImplementedError("This has yet to be implemented.")
 
     def limiter(self, indx):
+        """
+
+        """
         self.__scans = np.array(self.__scans)[indx].tolist()
         self.__polarities = np.array(self.__polarities)[indx].tolist()
         self.__tics = np.array(self.__tics)[indx].tolist()

@@ -20,6 +20,8 @@ class SpectrumList(object):
     """
     _outlier_detected = False
     _binned = False
+    _normalised = False
+    _transformed = False
     _value_imputated = False
     _scaled = False
     _value_imputated = False
@@ -170,6 +172,8 @@ class SpectrumList(object):
                 t_sl.append(t_s)
         if inplace == False:
             return t_sl
+        else:
+            self._binned = True
 
     def normalise(self, method="tic", inplace=True):
         """Helper method to apply normalisation across all Spectrum objects
@@ -196,6 +200,7 @@ class SpectrumList(object):
         if inplace == True:
             for spectrum in self.tolist():
                 spectrum._normalise(method=method)
+            self._normalised = True
         else:
             t_sl = copy(self)
             for spectrum in t_sl.tolist():
@@ -231,6 +236,7 @@ class SpectrumList(object):
         if inplace == True:
             for spectrum in self.tolist():
                 spectrum._transform(method=method)
+            self._transformed = True
         else:
             t_sl = copy(self)
             for spectrum in t_sl.tolist():
@@ -320,8 +326,14 @@ class SpectrumList(object):
                 writer.writerow(row)
             output.close()
 
-    def flatten_to_dataframe(self):
-        """
+    def to_dataframe(self):
+        """Flatten the SpectrumList to a Pandas DataFrame.
+
+        Returns
+        -------
+
+        y : Pandas DataFrame
+            A Pandas DataFrame containing the Spectrum Objects.
 
         """
         output = []
@@ -333,7 +345,12 @@ class SpectrumList(object):
         return pd.concat(output, axis=0)
 
     def tolist(self):
-        """
+        """Return the SpectrumList as a list.
+
+        Returns
+        -------
+        y : list
+            A list containing Spectrum objects.
 
         """
         return self._spectrum
@@ -345,12 +362,22 @@ class SpectrumList(object):
         masses = df.columns
         for id, values in df.iterrows():
             intensities = values.values
+            idx = intensities != np.nan
             spectrum = [x for x in self.to_list() if x.id == id][0]
-            spectrum.masses = masses
-            spectrum.intensities = intensities
+            spectrum.masses = masses[idx]
+            spectrum.intensities = intensities[idx]
 
     def get_mass_range(self):
-        """
+        """Calculate the mass range of the entirety of the SpectrumList.
+
+        Returns
+        -------
+
+        smallest : float
+            The smallest mass value within the SpectrumList.
+
+        largest : float
+            The largest mass value within the SpectrumList.
 
         """
         smallest = None
