@@ -296,7 +296,7 @@ class SpectrumList(object):
                     "%s is not a valid scaler method" % method)
             df[m] = s_i
 
-        sl = self.dataframe_to_spectrum(df)
+        sl = self.dataframe_to_spectrum_list(df)
 
         if inplace == True:
             self._spectrum = sl._spectrum
@@ -334,15 +334,30 @@ class SpectrumList(object):
                 if method.upper() == "BASIC":
                     filler = np.nanmin(i) / 2
                 elif method.upper() == "MEAN":
-                    pass
+                    filler = np.mean(i)
+                elif method.upper() == "MIN":
+                    filler = np.nanmin(i)
+                elif method.upper() == "MEDIAN":
+                    filler = np.nanmedian(i)
+                df.ix[identifier] = df.ix[identifier].replace(np.nan, filler)
+            return df
 
-    
+
         df = self.to_dataframe()
 
         if method.upper() == "ALL":
-            threshold = 1
+            threshold = 0
 
-        print _remove_by_threshold(df)
+        df = _remove_by_threshold(df)
+        df = _apply_imputation(df)
+
+        sl = self.dataframe_to_spectrum_list(df)
+
+        if inplace == True:
+            self._spectrum = sl._spectrum
+        else:
+            return sl
+
 
     def to_pickle(self, fp):
         """Dump the SpectrmList to a pickled object.
