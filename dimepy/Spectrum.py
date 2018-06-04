@@ -292,9 +292,9 @@ class Spectrum(object):
             elif method.upper() == "LOG2":
                 transformed_intensities = np.log2(self.intensities)
             elif method.upper() == "GLOG":
-                min = min(self.intensities) / 10
+                m = min(self.intensities) / 10
                 transformed_intensities = np.log2(self.intensities + np.sqrt(
-                    self.intensities**2 + min**2)) / 2
+                    self.intensities**2 + m**2)) / 2
             elif method.upper() == "SQRT":
                 transformed_intensities = np.array(
                     [sqrt(x) for x in self.intensities])
