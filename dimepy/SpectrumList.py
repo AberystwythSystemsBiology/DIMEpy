@@ -205,15 +205,15 @@ class SpectrumList(object):
 
         if inplace is True:
             for spectrum in self.tolist():
-                spectrum._normalise(method=method)
+                spectrum.normalise(method=method)
             self._normalised = True
         else:
             t_sl = copy(self)
             for spectrum in t_sl.tolist():
-                spectrum._normalise(method=method)
+                spectrum.normalise(method=method)
             return t_sl
 
-    def transform(self, method="nlog"):
+    def transform(self, method="nlog", inplace=True):
         """Helper method to apply transformation across all Spectrum objects
         within the SpectrumList.
 
@@ -241,12 +241,12 @@ class SpectrumList(object):
 
         if inplace is True:
             for spectrum in self.tolist():
-                spectrum._transform(method=method)
+                spectrum.transform(method=method)
             self._transformed = True
         else:
             t_sl = copy(self)
             for spectrum in t_sl.tolist():
-                spectrum._transform(method=method)
+                spectrum.transform(method=method)
             return t_sl
 
     def scale(self, method="mc", inplace=True):
