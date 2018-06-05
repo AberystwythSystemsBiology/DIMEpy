@@ -148,11 +148,11 @@ class SpectrumList(object):
             calculated_mass_values = []
             for bin, values in mass_values.iteritems():
                 if values == []:
-                    calculated_mass_values.append(bin)
+                    mass_values[bin] = bin
                 else:
                     method = getattr(np, mass_statistic)
-                    calculated_mass_values.append(method(values))
-            return sorted(mass_values)
+                    mass_values[bin] = method(values)
+            return sorted(mass_values.values())
 
         def _apply_binning(spectrum, bins):
             b_i, b_m, b_n = binned_statistic(
