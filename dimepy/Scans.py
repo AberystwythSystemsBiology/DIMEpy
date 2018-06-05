@@ -14,15 +14,15 @@ class Scans(object):
     Not supposed to be implemented outside of DIMEpy.
 
     """
-    __scans = []
-    __tics = []
-    __polarities = []
 
     def __init__(self, fp, snr_estimator, max_snr, type):
         self.fp = fp
         self.snr_estimator = snr_estimator
         self.max_snr = max_snr
         self.type = type
+        self.__scans = []
+        self.__tics = []
+        self.__polarities = []
         self._run()
 
     def _run(self):

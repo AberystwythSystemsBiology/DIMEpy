@@ -19,16 +19,18 @@ class SpectrumList(object):
     _spectrum : list, optional (default=[])
 
     """
-    _outlier_detected = False
-    _binned = False
-    _normalised = False
-    _transformed = False
-    _value_imputated = False
-    _scaled = False
-    _value_imputated = False
 
-    def __init__(self, _spectrum=[]):
+    def __init__(self, _spectrum=[], dir=None):
         self._spectrum = _spectrum
+        self._outlier_detected = False
+        self._binned = False
+        self._normalised = False
+        self._transformed = False
+        self._value_imputated = False
+        self._scaled = False
+        self._value_imputated = False
+        if dir is not None:
+            pass
 
     def outlier_detection(self, threshold=3, inplace=True, plot=False):
         """Perform outlier detection.
