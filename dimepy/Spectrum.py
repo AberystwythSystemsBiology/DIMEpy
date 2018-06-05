@@ -82,16 +82,6 @@ class Spectrum(object):
 
     """
 
-    _loaded = False
-
-    _normalised = False
-    _transformed = False
-    _scaled = False
-    _baseline_corrected = False
-
-    masses = np.array([])
-    intensities = np.array([])
-
     def __init__(self,
                  fp=None,
                  id=None,
@@ -114,17 +104,26 @@ class Spectrum(object):
         self.type = type
         self.label = label
 
+        self.masses = None
+        self.intensities = None
+
         if self.fp is not None:
             self._load_from_file()
             if id is None:
                 self._get_id_from_fp()
-        if id is None:
+        if id is not None:
             self.id = id
-
         if injection_order is not None:
             self.injection_order = int(injection_order)
         else:
             self.injection_order = 0
+
+        self._loaded = False
+
+        self._normalised = False
+        self._transformed = False
+        self._scaled = False
+        self._baseline_corrected = False
 
     @property
     def tic(self):
@@ -282,6 +281,7 @@ class Spectrum(object):
         """
 
         if self._transformed is False:
+
             if method.upper() == "LOG10":
                 transformed_intensities = np.log10(self.intensities)
             elif method.upper() == "CUBE":
@@ -301,6 +301,7 @@ class Spectrum(object):
             elif method.upper() == "IHS":
                 transformed_intensities = np.array(
                     [asinh(x) for x in self.intensities])
+
             else:
                 raise ValueError(
                     "%s is not a supported transformation method" % method)
@@ -340,10 +341,12 @@ class Spectrum(object):
         masses, intensities = zip(*scans.scans)
         masses = np.concatenate(masses).ravel().tolist()
         intensities = np.concatenate(intensities).ravel().tolist()
-
         masses, intensities = zip(*sorted(zip(masses, intensities)))
-        self.masses = np.array(masses)
-        self.intensities = np.array(intensities)
+
+        indx = np.array(intensities) != 0.0
+
+        self.masses = np.array(masses)[indx]
+        self.intensities = np.array(intensities)[indx]
 
     def plot(self, show=True, xlim=[], scaled=False, fp=None):
         """Method to visualise spectrum profile data using matplotlib.
