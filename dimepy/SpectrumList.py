@@ -359,12 +359,13 @@ class SpectrumList(object):
         def _remove_by_threshold(df):
             null_count = df.isnull().sum()
             _t = len(df.index.values) * threshold
-            to_keep = null_count <= threshold
-            return df[df.columns[to_keep]]
+            to_keep = null_count <= _t
+            return df[df.columns[to_keep.values]]
 
         def _apply_imputation(df):
             for identifier in df.index:
-                i = df.ix[identifier]
+                i = df.ix[identifier].values
+
                 if method.upper() == "BASIC":
                     filler = np.nanmin(i) / 2
                 elif method.upper() == "MEAN":
@@ -377,7 +378,8 @@ class SpectrumList(object):
                     raise ValueError(
                         "%s is not a valid imputation method." % method
                         )
-                df.ix[identifier] = df.ix[identifier].replace(np.nan, filler)
+                i[np.isnan(i)] = filler
+                df.ix[identifier] = i
             return df
 
         df = self.to_dataframe()
@@ -390,7 +392,7 @@ class SpectrumList(object):
 
         sl = self.dataframe_to_spectrum_list(df)
         if inplace is True:
-            self._spectrum == sl._spectrum
+            self._spectrum = sl._spectrum
             self._value_imputated = True
         else:
             return sl
