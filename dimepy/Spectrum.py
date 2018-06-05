@@ -281,6 +281,7 @@ class Spectrum(object):
         """
 
         if self._transformed is False:
+
             if method.upper() == "LOG10":
                 transformed_intensities = np.log10(self.intensities)
             elif method.upper() == "CUBE":
@@ -300,6 +301,7 @@ class Spectrum(object):
             elif method.upper() == "IHS":
                 transformed_intensities = np.array(
                     [asinh(x) for x in self.intensities])
+
             else:
                 raise ValueError(
                     "%s is not a supported transformation method" % method)
@@ -339,10 +341,12 @@ class Spectrum(object):
         masses, intensities = zip(*scans.scans)
         masses = np.concatenate(masses).ravel().tolist()
         intensities = np.concatenate(intensities).ravel().tolist()
-
         masses, intensities = zip(*sorted(zip(masses, intensities)))
-        self.masses = np.array(masses)
-        self.intensities = np.array(intensities)
+
+        indx = np.array(intensities) != 0.0
+
+        self.masses = np.array(masses)[indx]
+        self.intensities = np.array(intensities)[indx]
 
     def plot(self, show=True, xlim=[], scaled=False, fp=None):
         """Method to visualise spectrum profile data using matplotlib.

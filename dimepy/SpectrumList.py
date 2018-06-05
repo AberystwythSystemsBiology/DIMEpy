@@ -98,7 +98,7 @@ class SpectrumList(object):
 
     def binning(self,
                 bin_size=0.25,
-                int_statistic="median",
+                int_statistic="max",
                 mass_statistic="mean",
                 inplace=True):
         """Perform mass-binning.
@@ -113,11 +113,14 @@ class SpectrumList(object):
             The method used to calculate the binned intensitiy value.
 
             - If mean, calculated as the mean all spectrum intensity values for
-              a given bin.
+              each bin.
             - If median, calculated as the median of all spectrum intensity
-              values for a given bin.
-
-        mass_statistic : string, optional (default="mean")
+              values for each bin.
+            - If count then compute the count of intensities within each bin.
+            - If sum then compute the sum of intensity values within each bin.
+            - If min then compute the minimum intensity value within each bin.
+            - If max then compute the maximum intensity value within each bin.
+        mass_statistic : string, optional (default="max")
             The method used to calculate the binned mass value.
 
             - If mean, calculated as the mean all spectrum mass values for
@@ -386,9 +389,8 @@ class SpectrumList(object):
         df = _apply_imputation(df)
 
         sl = self.dataframe_to_spectrum_list(df)
-
         if inplace is True:
-            self._spectrum = sl._spectrum
+            self._spectrum == sl._spectrum
             self._value_imputated = True
         else:
             return sl
@@ -506,8 +508,7 @@ class SpectrumList(object):
 
         """
 
-        t_sl = SpectrumList()
-
+        t_sl = SpectrumList([])
         for id, values in df.iterrows():
             intensities = values.values
             idx = intensities != np.nan
