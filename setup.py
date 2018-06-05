@@ -11,14 +11,14 @@ except (IOError, ImportError):
 
 setup(
     name="dimepy",
-    version="0.1.1",
+    version="0.1.2",
     url='http://www.github.com/KeironO/dimepy',
     license="GPLv2",
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     install_requires=open("requirements.txt").read().splitlines(),
-    platforms=["Windows", "UNIX"],
+    platforms=["Windows", "UNIX", "Mac OS"],
     long_description=long_description,
     author="Keiron O'Shea",
     author_email="keo7@aber.ac.uk",
