@@ -1,4 +1,21 @@
-# -*- coding: utf-8 -*-
+'''
+Copyright (c) 2017-2019 Keiron O'Shea
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public
+License as published by the Free Software Foundation; either
+version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.
+
+You should have received a copy of the GNU General Public
+License along with this program; if not, write to the
+Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+Boston, MA 02110-1301 USA
+'''
 
 import os
 from math import floor, asinh
@@ -12,7 +29,7 @@ from scipy.stats.mstats import mquantiles
 import warnings
 import matplotlib.pyplot as plt
 from operator import itemgetter
-from Scans import Scans
+from .scans import Scans
 
 
 class Spectrum(object):
@@ -39,10 +56,10 @@ class Spectrum(object):
         - If "negative" then only negative ion scans will be read.
         - If None, all ion scans will be read.
 
-    type : string, optional (default="peaks")
+    type : string, optional (default="raw")
         Set what type of peaks you want to read into the Spectrum object.
 
-        - If "peaks" then return all peaks of the spectrum.
+        - If "raw" then return all peaks of the spectrum.
         - If "centroidedPeaks" then return a centroided version of the
           profile spectrum.
         - If "reprofiledPeaks" then return a version a centroided spectrum.
@@ -86,7 +103,7 @@ class Spectrum(object):
                  fp=None,
                  id=None,
                  polarity=None,
-                 type="peaks",
+                 type="raw",
                  apex_mad=None,
                  snr_estimator=None,
                  max_snr=2.5,
@@ -347,6 +364,7 @@ class Spectrum(object):
 
         self.masses = np.array(masses)[indx]
         self.intensities = np.array(intensities)[indx]
+        self.scans = scans
 
     def plot(self, show=True, xlim=[], scaled=False, fp=None):
         """Method to visualise spectrum profile data using matplotlib.
