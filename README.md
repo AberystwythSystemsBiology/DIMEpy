@@ -12,7 +12,7 @@ Beckmann, et al. (2008) - doi:10.1038/nprot.2007.500
 
 ## Installation
 
-DIMEpy requires Python 2.7.+ and is unfortunately not compatible with Python 3.
+DIMEpy requires Python 3+ and is unfortunately not compatible with Python 2. If you are still using Python 2, a clever workaround is to install Python 3 and use that instead.
 
 You can install it through ```pypi``` using ```pip```:
 
