@@ -50,12 +50,11 @@ class Scan:
     def _estimate_snr(self, snr_estimator):
         return self.pymzml_spectrum.estimated_noise_level(mode=snr_estimator)
 
-
     def _calculate_total_ion_count(self):
         return np.sum(self.intensities)
 
     def _calculate_mass_range(self):
-        return np.array(np.min(self.masses), np.max(self.masses))
+        return [np.min(self.masses), np.max(self.masses)]
 
     def _get_spectrum(self):
         try:
@@ -73,7 +72,9 @@ class Scan:
         except ValueError:
             raise ValueError("%s is not a supported peak type." % (self.peak_type))
 
-    def bin(self, bin_width: float):
+    def bin(self, bin_width: float = 0.01):
+        min_mass, max_mass = self.mass_range
+        print(range(min_mass, bin_width, max_mass))
         print("Binning here.")
 
     def _get_polarity(self):

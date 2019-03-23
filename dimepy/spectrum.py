@@ -68,6 +68,7 @@ class Spectrum:
 
             scans.append(scan)
             to_use.append(True)
+            break
 
         return np.array(scans), np.array(to_use)
 
@@ -111,7 +112,7 @@ class Spectrum:
         for scan in self.scans:
             masses.extend(scan.masses)
             intensities.extend(scan.intensities)
-
+            
         spectrum = list(zip(masses, intensities))
 
         # Sort by masses
