@@ -73,6 +73,9 @@ class Scan:
         except ValueError:
             raise ValueError("%s is not a supported peak type." % (self.peak_type))
 
+    def bin(self, bin_width: float):
+        print("Binning here.")
+
     def _get_polarity(self):
         polarity = None
         for polarity_accession in terms["polarity"].keys():
