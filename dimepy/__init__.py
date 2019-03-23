@@ -19,4 +19,6 @@ Boston, MA 02110-1301 USA
 
 from .spectrum import Spectrum
 from .spectrumList import SpectrumList
-from .scans import Scans
+from .scan import Scan
+
+terms = {"MS:1000129": "POSITIVE", "MS:1000130": "NEGATIVE"}
