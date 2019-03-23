@@ -16,6 +16,7 @@
 # Boston, MA 02110-1301 USA
 
 import itertools
+import numpy as np
 
 from pymzml.run import Reader as pymzmlReader
 
@@ -42,7 +43,7 @@ class Spectrum:
         self.stratification = stratification
         self.snr_estimator = snr_estimator
 
-        self.scans = []
+        self._scans, self._to_use = self.load()
 
     def load(self):
         extraAccessions=[
@@ -54,7 +55,26 @@ class Spectrum:
         
         reader = pymzmlReader(self.filepath, extraAccessions=extraAccessions)
 
-        for pymzmlSpectrumInstance in reader:
+        scans = []
+        to_use = []
+
+        for index, pymzmlSpectrumInstance in enumerate(reader):
+            if index > 10:
+                break
             scan = Scan(pymzmlSpectrumInstance, snr_estimator=self.snr_estimator)
-            print(dir(scan))
-            exit(0)
+
+            scans.append(scan)
+            to_use.append(True)
+
+        return np.array(scans), np.array(to_use)
+
+            
+
+    def get_polarity(self, polarity: str):
+        for index, scan in enumerate(self._scans):
+            if scan.polarity != polarity.upper():
+                self._to_use[index] = False
+
+    @property
+    def scans(self):
+        return self._scans[self._to_use == True]

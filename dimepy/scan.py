@@ -43,21 +43,24 @@ class Scan:
 
         self.masses, self.intensities = self._get_spectrum()
 
-        self.total_ion_count = np.sum(self.intensities)
-        
-        self.mass_range = np.array(
-            np.min(self.masses),
-            np.max(self.masses)
-        )
+        self.total_ion_count = self._calculate_total_ion_count()
+
+        self.mass_range = self._calculate_mass_range()
 
     def _estimate_snr(self, snr_estimator):
         return self.pymzml_spectrum.estimated_noise_level(mode=snr_estimator)
 
 
+    def _calculate_total_ion_count(self):
+        return np.sum(self.intensities)
+
+    def _calculate_mass_range(self):
+        return np.array(np.min(self.masses), np.max(self.masses))
+
     def _get_spectrum(self):
         try:
             peaks = getattr(self.pymzml_spectrum, "peaks")(self.peak_type)
-            
+
             masses, intensities = [np.array(x) for x in zip(*peaks)]
 
             if self.snr:
