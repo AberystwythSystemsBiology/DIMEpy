@@ -18,6 +18,9 @@
 
 from .utils import terms
 import numpy as np
+from scipy.stats import binned_statistic
+import math
+
 
 class Scan:
     def __init__(self,
@@ -72,10 +75,32 @@ class Scan:
         except ValueError:
             raise ValueError("%s is not a supported peak type." % (self.peak_type))
 
-    def bin(self, bin_width: float = 0.01):
+    def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
         min_mass, max_mass = self.mass_range
-        print(range(min_mass, bin_width, max_mass))
-        print("Binning here.")
+
+        min_mass = math.floor(min_mass)
+        max_mass = math.ceil(max_mass)+bin_width
+
+        bins = np.arange(min_mass, max_mass, bin_width)
+
+        binned_intensities, _, _ = binned_statistic(
+            self.masses,
+            self.intensities,
+            statistic = statistic,
+            bins = bins
+        )
+
+        binned_masses, _, _= binned_statistic(
+            self.masses,
+            self.masses,
+            statistic = statistic,
+            bins = bins
+        )
+
+        index = ~np.isnan(binned_intensities)
+
+        self.masses = binned_masses[index]
+        self.intensities = binned_intensities[index]
 
     def _get_polarity(self):
         polarity = None

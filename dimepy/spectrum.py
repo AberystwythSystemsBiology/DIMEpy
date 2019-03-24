@@ -18,6 +18,8 @@
 import itertools
 import numpy as np
 import matplotlib.pyplot as plt
+import math
+from scipy.stats import binned_statistic
 
 from pymzml.run import Reader as pymzmlReader
 
@@ -68,7 +70,6 @@ class Spectrum:
 
             scans.append(scan)
             to_use.append(True)
-            break
 
         return np.array(scans), np.array(to_use)
 
@@ -121,6 +122,36 @@ class Spectrum:
         self._masses = np.array([x[0] for x in spectrum])
         self._intensities = np.array([x[1] for x in spectrum])
 
+    def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
+        min_mass, max_mass = self.mass_range
+
+        min_mass = math.floor(min_mass)
+        max_mass = math.ceil(max_mass)+bin_width
+
+        bins = np.arange(min_mass, max_mass, bin_width)
+
+        binned_intensities, _, _ = binned_statistic(
+            self.masses,
+            self.intensities,
+            statistic = statistic,
+            bins = bins
+        )
+
+        binned_masses, _, _= binned_statistic(
+            self.masses,
+            self.masses,
+            statistic = statistic,
+            bins = bins
+        )
+
+        index = ~np.isnan(binned_intensities)
+
+        self._masses = binned_masses[index]
+        self._intensities = binned_intensities[index]
+
+    def _calculate_mass_range(self):
+        return [np.min(self.masses), np.max(self.masses)]
+
     @property
     def scans(self):
         return self._scans[self._to_use == True]
@@ -138,3 +169,7 @@ class Spectrum:
             return self._intensities
         else:
             raise ValueError("No intensities generated, run get Spectrum.first.")
+
+    @property
+    def mass_range(self):
+        return self._calculate_mass_range()
