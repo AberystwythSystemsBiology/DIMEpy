@@ -17,6 +17,15 @@
 
 
 class SpectrumList:
+    def __init__(self, spectrum_list):
+        self._spectrum_list = spectrum_list
 
-    def __init__(self):
-        pass
+    def bin(self):
+
+        def _get_mass_range():
+            [spectrum.mass_range for x in self.spectrum_list]
+
+    def
+
+    def tolist(self):
+        return self._spectrum_list

@@ -74,6 +74,9 @@ class Spectrum:
             scans.append(scan)
             to_use.append(True)
 
+            if index > 10:
+                break
+
         return np.array(scans), np.array(to_use)
 
 
@@ -156,9 +159,6 @@ class Spectrum:
         return [np.min(self.masses), np.max(self.masses)]
 
 
-    """
-        I am not sure, but who cares.
-    """
     def remove_spurious_peaks(self, bin_width: float = 0.01, threshold: float = 0.5, scan_grouping: int = 50.0):
         
         def _determine_scan_group():
@@ -229,6 +229,9 @@ class Spectrum:
                 scan.masses = masses
                 scan.intensities = intensities
 
+        self._masses = False
+        self._intensities = False
+
         if scan_grouping:
             scan_groups = _determine_scan_group()
         else:
@@ -259,7 +262,7 @@ class Spectrum:
         if type(self._intensities) != bool:
             return self._intensities
         else:
-            raise ValueError("No intensities generated, run get Spectrum.first.")
+            raise ValueError("No intensities generated, run Spectrum.get first")
 
     @property
     def mass_range(self):
