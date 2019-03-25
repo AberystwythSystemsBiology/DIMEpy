@@ -73,9 +73,6 @@ class Spectrum:
             scans.append(scan)
             to_use.append(True)
 
-            if index > 5:
-                break
-
         return np.array(scans), np.array(to_use)
 
 
