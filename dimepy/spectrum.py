@@ -20,7 +20,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from scipy.stats import binned_statistic
-from sklearn.cluster import MeanShift, estimate_bandwidth
 
 import pandas as pd
 
@@ -74,7 +73,7 @@ class Spectrum:
             scans.append(scan)
             to_use.append(True)
 
-            if index > 10:
+            if index > 5:
                 break
 
         return np.array(scans), np.array(to_use)
