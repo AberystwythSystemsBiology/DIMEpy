@@ -101,7 +101,7 @@ class Scan:
 
         self.masses = binned_masses[index]
         self.intensities = binned_intensities[index]
-
+    
     def _get_polarity(self):
         polarity = None
         for polarity_accession in terms["polarity"].keys():

@@ -20,6 +20,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from scipy.stats import binned_statistic
+import pandas as pd
 
 from pymzml.run import Reader as pymzmlReader
 
@@ -71,6 +72,9 @@ class Spectrum:
             scans.append(scan)
             to_use.append(True)
 
+            if index > 5:
+                break
+
         return np.array(scans), np.array(to_use)
 
 
@@ -113,7 +117,7 @@ class Spectrum:
         for scan in self.scans:
             masses.extend(scan.masses)
             intensities.extend(scan.intensities)
-            
+
         spectrum = list(zip(masses, intensities))
 
         # Sort by masses
@@ -151,6 +155,15 @@ class Spectrum:
 
     def _calculate_mass_range(self):
         return [np.min(self.masses), np.max(self.masses)]
+
+    def value_imputate(self, method: str="basic", threshold: float = 0.5, clustering: bool = False):
+        
+        
+
+        for scan in self.scans:
+            print(scan.mass_range)
+
+
 
     @property
     def scans(self):
