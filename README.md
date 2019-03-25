@@ -44,45 +44,48 @@ Please report all bugs you find in the issues tracker. We would welcome all sort
 
 ## Usage
 
-The following script takes a path containing mzML files, processes them following the Beckmann, et al protocol and exports the result to an Excel file.
-
+The following script takes a path containing mzML files, processes them following the Beckmann, et al protocol and exports the result to a comma-seperated file.
 
 ```python
 
 # Importing modules required to run this script.
-import dimepy
+from dimepy import Spectrum, SpectrumList
 import os
 
 # Path containing mzML files.
 mzMLpaths = "/dir/to/mzMLs/"
 
-# Where we'll store the spectrum.
-spectrum_list = dimepy.SpectrumList()
+# List to store the spectra
+l = []
 
 for index, file in enumerate(os.listdir(mzMLpaths)):
+  filepath = os.path.join(mzMLpaths, file)
   # Load in the spectrum directly using default parameters.
-  spectrum = dimepy.Spectrum(os.path.join(mzMLpaths, file))
-  # Correct for baseline.
-  spectrum.baseline_correction(qtl=0.6)
-  spectrum_list.append(spectrum)
+  spectrum = Spectrum(filepath, identifier=file)
+  spec.load()
+  spec.get_polarity("positive")
+  spec.get_apex(3)
+  spec.get()
 
-# Write the raw spectrum to a comma seperated file.
-spectrum_list.to_csv("raw.csv")
-# Convert the object to a SpectrumListProcessor for processing.
+  for scan in spec.scans:
+    scan.bin()
 
-# Apply outlier detection to remove spurious samples.
-spectrum_list.outlier_detection()
-# Bin masses over 0.125 m/z.
-spectrum_list.binning(bin_size=0.125)
-# Value imputate where < 50% of the values are lost across all samples.
-spectrum_list.value_imputation(method="basic", threshold=0.5)
-# Normalise over the total ion count.
-spectrum_list.normalise(method="TIC")
-# Apply generalised log transformation
-spectrum_list.transform(method="glog")
+  spec.remove_spurious_peaks()
+  spec.get()
 
-# Write the processed spectrum to a comma seperated file.
-spectrum_list.to_csv("processed.csv")
+  l.append(spec)
+
+spectrum_list = SpectrumList(l, bin_width=0.02)
+
+spectrum_list.df.to_csv("/tmp/raw_ish.csv")
+
+spectrum_list.transform()
+spectrum_list.normalise()
+
+spectrum_list.value_imputate()
+
+spectrum_list.df.to_csv("/tmp/final.csv")
+
 ```
 
 ## License

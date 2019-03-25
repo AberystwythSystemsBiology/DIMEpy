@@ -177,7 +177,7 @@ class SpectrumList:
 
         _remove_by_threshold()
         _apply_imputation()
-        
+
 
     def tolist(self):
         return self._spectrum_list

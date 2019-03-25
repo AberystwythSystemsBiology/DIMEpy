@@ -239,9 +239,6 @@ class Spectrum:
             non_spurios_masses = _calculate_bins(scan_list, bins)
             _remove_from_scans(scan_list, non_spurios_masses)
 
-
-
-
     @property
     def scans(self):
         return self._scans[self._to_use == True]
