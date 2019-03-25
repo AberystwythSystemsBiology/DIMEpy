@@ -20,6 +20,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 from scipy.stats import binned_statistic
+from sklearn.cluster import MeanShift, estimate_bandwidth
+
 import pandas as pd
 
 from pymzml.run import Reader as pymzmlReader
@@ -71,9 +73,6 @@ class Spectrum:
 
             scans.append(scan)
             to_use.append(True)
-
-            if index > 5:
-                break
 
         return np.array(scans), np.array(to_use)
 
@@ -156,12 +155,91 @@ class Spectrum:
     def _calculate_mass_range(self):
         return [np.min(self.masses), np.max(self.masses)]
 
-    def value_imputate(self, method: str="basic", threshold: float = 0.5, clustering: bool = False):
-        
-        
 
-        for scan in self.scans:
-            print(scan.mass_range)
+    """
+        I am not sure, but who cares.
+    """
+    def remove_spurious_peaks(self, bin_width: float = 0.01, threshold: float = 0.5, scan_grouping: int = 50.0):
+        
+        def _determine_scan_group():
+            medians = [np.mean(x.masses) for x in self.scans]
+
+            bins = np.arange(np.min(medians), np.max(medians), scan_grouping)
+
+            _, _, binnumber = binned_statistic(
+                medians,
+                medians,
+                statistic = "mean",
+                bins = bins
+            )
+
+            scan_groups = {}
+
+            for index, group in enumerate(np.unique(binnumber)):
+                scan_groups[index] = self.scans[binnumber == group]
+
+            return scan_groups
+
+
+        def _get_bins(scan_list):
+            mass_ranges = np.array([x.mass_range for x in scan_list])
+            min_mass = np.min([x[0] for x in mass_ranges])
+            max_mass = np.max([x[1] for x in mass_ranges])+bin_width
+            return np.arange(min_mass, max_mass, step=bin_width)
+
+
+        def _calculate_bins(scan_list, bins):
+
+            scan_index = {}
+
+            for index, scan in enumerate(scan_list):
+
+                _, _, binnumber = binned_statistic(
+                    scan.masses,
+                    scan.intensities,
+                    bins = bins
+                )
+
+                counts = []
+
+                for bin_index in range(len(bins)):
+                    number_bins = np.count_nonzero(binnumber == bin_index)
+                    counts.append(number_bins)
+
+
+                scan_index[index] = counts
+
+            df = pd.DataFrame(scan_index).T
+            df.columns = bins
+            df = df.loc[:, (df != 0).any(axis=0)]
+
+            df = df.replace(0, np.nan)
+
+            to_keep = df.columns[df[df.columns].isnull().sum() <= len(df)*threshold]
+            return to_keep
+        
+        def _remove_from_scans(scan_list, non_spurios_masses):
+            for scan in scan_list:
+                masses = []
+                intensities = []
+                for non_spurios_mass in non_spurios_masses:
+                    keep = np.where(np.logical_and(scan.masses>=non_spurios_mass, scan.masses<=non_spurios_mass+bin_width))
+                    masses.extend(scan.masses[keep].tolist())
+                    intensities.extend(scan.intensities[keep].tolist())
+                scan.masses = masses
+                scan.intensities = intensities
+
+        if scan_grouping:
+            scan_groups = _determine_scan_group()
+        else:
+            scan_groups = {0 : self.scans}
+
+        for scan_group in scan_groups:
+            scan_list = scan_groups[scan_group]
+            bins = _get_bins(scan_list)
+            non_spurios_masses = _calculate_bins(scan_list, bins)
+            _remove_from_scans(scan_list, non_spurios_masses)
+
 
 
 
