@@ -244,7 +244,7 @@ class Spectrum:
 
 
             _tmp_si = np.array(scan_index)
-            return bins[_tmp_si.sum(axis=0) >= threshold]
+            return bins[_tmp_si.sum(axis=0) >= len(scan_list) threshold]
 
         def _remove_from_scans(scan_list, non_spurios_masses):
             for scan in scan_list:
