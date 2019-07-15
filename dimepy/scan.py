@@ -17,9 +17,9 @@
 
 import numpy as np
 from scipy.stats import binned_statistic
-from .utils import _bin_masses_and_intensities, terms
+from .utils import bin_masses_and_intensities, terms
 import math
-
+from typing import Tuple
 
 class Scan:
     def __init__(self,
@@ -34,27 +34,35 @@ class Scan:
 
         """
         self.pymzml_spectrum = pymzml_spectrum
-        self.polarity = self._get_polarity()
 
         self.peak_type = peak_type
-        
+
         self.snr = False
 
-        if self.snr:
+        if snr_estimator != False:
             self.snr = self._estimate_snr(snr_estimator)
 
         self.masses, self.intensities = self._get_spectrum()
 
-    def _estimate_snr(self, snr_estimator):
+    def _estimate_snr(self, snr_estimator: str) -> float:
         return self.pymzml_spectrum.estimated_noise_level(mode=snr_estimator)
 
     @property
-    def total_ion_count(self):
+    def total_ion_count(self) -> float:
         return np.sum(self.intensities)
 
     @property
-    def mass_range(self):
-        return [np.min(self.masses), np.max(self.masses)]
+    def polarity(self) -> str:
+        polarity = None
+        for polarity_accession in terms["polarity"].keys():
+            if self.pymzml_spectrum.get(polarity_accession) != None:
+                polarity = terms["polarity"][polarity_accession]
+        return polarity
+
+
+    @property
+    def mass_range(self) -> Tuple[float, float]:
+        return np.min(self.masses), np.max(self.masses)
 
     def _get_spectrum(self):
         try:
@@ -73,32 +81,8 @@ class Scan:
             raise ValueError("%s is not a supported peak type." %
                              (self.peak_type))
 
-    def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
-        min_mass, max_mass = self.mass_range
 
-        min_mass = math.floor(min_mass)
-        max_mass = math.ceil(max_mass) + bin_width
+    def bin(self, bin_width: float = 0.01, statistic: str = "mean") -> None:
+        self.masses, self.intensities = bin_masses_and_intensities(
+            self.masses, self.intensities, bin_width, statistic)
 
-        bins = np.arange(min_mass, max_mass, bin_width)
-
-        binned_intensities, _, _ = binned_statistic(self.masses,
-                                                    self.intensities,
-                                                    statistic=statistic,
-                                                    bins=bins)
-
-        binned_masses, _, _ = binned_statistic(self.masses,
-                                               self.masses,
-                                               statistic=statistic,
-                                               bins=bins)
-
-        index = ~np.isnan(binned_intensities)
-
-        self.masses = binned_masses[index]
-        self.intensities = binned_intensities[index]
-
-    def _get_polarity(self):
-        polarity = None
-        for polarity_accession in terms["polarity"].keys():
-            if self.pymzml_spectrum.get(polarity_accession) != None:
-                polarity = terms["polarity"][polarity_accession]
-        return polarity

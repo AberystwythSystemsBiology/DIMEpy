@@ -23,21 +23,21 @@ import numpy as np
 terms = {"polarity": {"MS:1000129": "NEGATIVE", "MS:1000130": "POSITIVE"}}
 
 
-def _bin_masses_and_intensities(masses: np.array,
-                                intensities: np.array,
-                                bin_width: float = 0.25,
-                                statistic: str = "mean"
-                                ) -> Tuple[np.array, np.array]:
+def bin_masses_and_intensities(masses: np.array,
+                               intensities: np.array,
+                               bin_width: float = 0.25,
+                               statistic: str = "mean"
+                               ) -> Tuple[np.array, np.array]:
 
     bins = np.arange(
         np.min(masses) - bin_width,
         np.max(masses) + bin_width, bin_width)
     statistic, bin_edges, bin_number = binned_statistic(masses,
                                                         intensities,
-                                                        statistic="mean",
+                                                        statistic=statistic,
                                                         bins=bins)
 
-    bin_number = bin_number - 1
+    bin_number = bin_number
 
     masses = [
         np.mean(masses[x]) for x in find_objects(bin_number) if x != None

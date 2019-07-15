@@ -21,27 +21,23 @@ from typing import Tuple, List
 
 import math
 from scipy.stats import binned_statistic
-from joblib import Parallel , delayed
-
+from joblib import Parallel, delayed
 
 import pandas as pd
 
 from pymzml.run import Reader as pymzmlReader
 
-from .utils import terms
+from .utils import terms, bin_masses_and_intensities
 from .scan import Scan
 
 
 class Spectrum:
-
-    def __init__(
-        self,
-        filepath: str,
-        identifier: str = None,
-        injection_order: int = None,
-        stratification: str = None,
-        snr_estimator: str = False
-        ):
+    def __init__(self,
+                 filepath: str,
+                 identifier: str = None,
+                 injection_order: int = None,
+                 stratification: str = None,
+                 snr_estimator: str = False):
         """
         Initialise Spectrum object for a given mzML file.
 
@@ -64,11 +60,9 @@ class Spectrum:
 
         self._scans, self._to_use = self._base_load()
 
-
     def _base_load(self) -> Tuple[np.array, np.array]:
-        extraAccessions=[
-            [[y, ["value"]] for y in terms[x]] for x in terms.keys()
-        ]
+        extraAccessions = [[[y, ["value"]] for y in terms[x]]
+                           for x in terms.keys()]
 
         # Flatten the list of lists of lists into a list of lists.
         extraAccessions = list(itertools.chain.from_iterable(extraAccessions))
@@ -84,9 +78,7 @@ class Spectrum:
 
         return np.array(scans), np.array(to_use)
 
-
     def limit_polarity(self, polarity: str) -> None:
-
         def _determine_polarity(scan) -> str:
             scan_polarity = None
             for polarity_acc in terms["polarity"]:
@@ -98,7 +90,6 @@ class Spectrum:
         for index, scan in enumerate(self._scans):
             if _determine_polarity(scan) != polarity.upper():
                 self._to_use[index] = False
-
 
     def limit_apex(self, mad_multiplyer: int = 1) -> None:
 
@@ -128,49 +119,24 @@ class Spectrum:
 
         self._get_masses_and_ints()
 
-
-
     def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
-        min_mass, max_mass = self.mass_range
 
-        min_mass = math.floor(min_mass)
-        max_mass = math.ceil(max_mass)+bin_width
+        self._masses, self._intensities = bin_masses_and_intensities(
+            self.masses, self.intensities, bin_width, statistic)
 
-        bins = np.arange(min_mass, max_mass, bin_width)
-
-        binned_intensities, _, _ = binned_statistic(
-            self.masses,
-            self.intensities,
-            statistic = statistic,
-            bins = bins
-        )
-
-        binned_masses, _, _= binned_statistic(
-            self.masses,
-            self.masses,
-            statistic = statistic,
-            bins = bins
-        )
-
-        index = ~np.isnan(binned_intensities)
-
-        self._masses = binned_masses[index]
-        self._intensities = binned_intensities[index]
-
-
-    def remove_spurious_peaks(self, bin_width: float = 0.01, threshold: float = 0.5, scan_grouping: int = 50.0):
-        
+    def remove_spurious_peaks(self,
+                              bin_width: float = 0.01,
+                              threshold: float = 0.5,
+                              scan_grouping: int = 50.0):
         def _determine_scan_group():
             medians = [np.mean(x.masses) for x in self.scans]
 
             bins = np.arange(np.min(medians), np.max(medians), scan_grouping)
 
-            _, _, binnumber = binned_statistic(
-                medians,
-                medians,
-                statistic = "mean",
-                bins = bins
-            )
+            _, _, binnumber = binned_statistic(medians,
+                                               medians,
+                                               statistic="mean",
+                                               bins=bins)
 
             scan_groups = {}
 
@@ -179,13 +145,11 @@ class Spectrum:
 
             return scan_groups
 
-
         def _get_bins(scan_list):
             mass_ranges = np.array([x.mass_range for x in scan_list])
             min_mass = np.min([x[0] for x in mass_ranges])
-            max_mass = np.max([x[1] for x in mass_ranges])+bin_width
+            max_mass = np.max([x[1] for x in mass_ranges]) + bin_width
             return np.arange(min_mass, max_mass, step=bin_width)
-
 
         def _calculate_bins(scan_list, bins):
 
@@ -193,18 +157,15 @@ class Spectrum:
 
             for index, scan in enumerate(scan_list):
 
-                _, _, binnumber = binned_statistic(
-                    scan.masses,
-                    scan.intensities,
-                    bins = bins
-                )
+                _, _, binnumber = binned_statistic(scan.masses,
+                                                   scan.intensities,
+                                                   bins=bins)
 
                 counts = []
 
                 for bin_index in range(len(bins)):
                     number_bins = np.count_nonzero(binnumber == bin_index)
                     counts.append(number_bins)
-
 
                 scan_index[index] = counts
 
@@ -214,15 +175,19 @@ class Spectrum:
 
             df = df.replace(0, np.nan)
 
-            to_keep = df.columns[df[df.columns].isnull().sum() <= len(df)*threshold]
+            to_keep = df.columns[df[df.columns].isnull().sum() <= len(df) *
+                                 threshold]
             return to_keep
-        
+
         def _remove_from_scans(scan_list, non_spurios_masses):
             for scan in scan_list:
                 masses = []
                 intensities = []
                 for non_spurios_mass in non_spurios_masses:
-                    keep = np.where(np.logical_and(scan.masses>=non_spurios_mass, scan.masses<=non_spurios_mass+bin_width))
+                    keep = np.where(
+                        np.logical_and(
+                            scan.masses >= non_spurios_mass,
+                            scan.masses <= non_spurios_mass + bin_width))
                     masses.extend(scan.masses[keep].tolist())
                     intensities.extend(scan.intensities[keep].tolist())
                 scan.masses = masses
@@ -234,14 +199,13 @@ class Spectrum:
         if scan_grouping:
             scan_groups = _determine_scan_group()
         else:
-            scan_groups = {0 : self.scans}
+            scan_groups = {0: self.scans}
 
         for scan_group in scan_groups:
             scan_list = scan_groups[scan_group]
             bins = _get_bins(scan_list)
             non_spurios_masses = _calculate_bins(scan_list, bins)
             _remove_from_scans(scan_list, non_spurios_masses)
-
 
     def _get_masses_and_ints(self):
         masses = []
@@ -257,9 +221,6 @@ class Spectrum:
 
         self._masses = masses[sorted_idx]
         self._intensities = intensities[sorted_idx]
-        
-            
-
 
     @property
     def scans(self):
@@ -277,7 +238,8 @@ class Spectrum:
         if type(self._intensities) != bool:
             return self._intensities
         else:
-            raise ValueError("No intensities generated, run Spectrum.get first")
+            raise ValueError(
+                "No intensities generated, run Spectrum.get first")
 
     @property
     def mass_range(self):
