@@ -41,7 +41,7 @@ class Spectrum:
         """
         Initialise Spectrum object for a given mzML file.
 
-        Args:
+        Arguments:
             filepath (str): Path to the mzML file to parse.
             identifier (str): Unique identifier for the Spectrum object.
             injection_order (int): The injection number of the Spectrum object.
@@ -79,6 +79,13 @@ class Spectrum:
         return np.array(scans), np.array(to_use)
 
     def limit_polarity(self, polarity: str) -> None:
+        """
+        Limit the Scans found within the mzML file to whatever polarity is given.
+        This is quite useful for those of us that are using mixed polarity experiments.
+
+        Arguments:
+            polarity (string): polarity type of the scans required (positive/negative)
+        """
         def _determine_polarity(scan) -> str:
             scan_polarity = None
             for polarity_acc in terms["polarity"]:
@@ -91,8 +98,27 @@ class Spectrum:
             if _determine_polarity(scan) != polarity.upper():
                 self._to_use[index] = False
 
-    def limit_apex(self, mad_multiplyer: int = 1) -> None:
+    def limit_infusion(self, mad_multiplyer: int = 1) -> None:
+        """
+        This method is a slight extension of the work by Manfred Beckmann
+        (meb@aber.ac.uk) in FIEMSpro in which we use the mean absolute
+        deviation to determine when the infusion has taken place.
 
+        Infusion Profile (Sketch):
+
+               _
+              / \
+             /   \_
+        ____/       \_________________
+        0     0.5     1     1.5     2 [min]
+            |--------| Apex
+
+        
+        Arguments:
+            mad_multiplier (int): The multiplier for the mean absolute
+            deviation method to take the infusion profile from.
+        
+        """
         tics = np.array([scan.TIC for scan in self._scans])
         mad = np.mean(np.absolute(np.array(tics) - np.mean(tics)))
 
@@ -104,30 +130,77 @@ class Spectrum:
             self._to_use[sel] = apex_index[indx]
 
     def reset(self) -> None:
+        """
+        A method to reset the Spectrum object completely.        
+        """
         self._to_use = self._to_use == False
         self._masses = False
         self._intensities = False
         self.read_scans = []
 
     def load_scans(self) -> None:
+        """
+        A method to load the scans in.
+
+        Note: 
+            If you are using mixed polarity methods, or only require the
+            infusion profile - please ensure you run limit_infusion and
+            limit_profile.
+        """
         scans = []
         masses = []
         intensities = []
         for scan in self._scans[self._to_use]:
-            scans.append(Scan(scan, snr_estimator=self.snr_estimator))
+            scan = Scan(scan, snr_estimator=self.snr_estimator)
+
+            masses.extend(scan.masses.tolist())
+            intensities.extend(scan.intensities.tolist())
+
+            scans.append(scan)
+
+        masses = np.array(masses)
+        intensities = np.array(intensities)
+
+        sorted_idx = np.argsort(masses)
+
+        self._masses = masses[sorted_idx]
+        self._intensities = intensities[sorted_idx]
+
         self.read_scans = scans
 
-        self._get_masses_and_ints()
 
     def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
+        """
+        Method to conduct mass binning to nominal mass and mass spectrum
+        generation.
 
+        Arguments:
+            bin_width (float): The mass-to-ion bin-widths to use for binning.
+            statistic (str): The statistic to use to calculate bin values.
+        """
         self._masses, self._intensities = bin_masses_and_intensities(
             self.masses, self.intensities, bin_width, statistic)
 
     def remove_spurious_peaks(self,
                               bin_width: float = 0.01,
                               threshold: float = 0.5,
-                              scan_grouping: int = 50.0):
+                              scan_grouping: float = 50.0):
+        """
+        Method that's highly influenced by Jasen Finch's (jsf9@aber.ac.uk)
+        binneR, in which spurios peaks can be removed. At the time of writing,
+        this method has serious performance issues and needs to be rectified.
+
+        Arguments:
+            bin_width (float): The mass-to-ion bin-widths to use for binning.
+            threshold (float): Percentage of scans in which a peak must be in
+            in order for it to be considered.
+            scan_grouping (float): Mass-to-ion scan groups.
+
+
+        Note:
+            load_scans() must first be run in order for this to work.
+
+        """
         def _determine_scan_group():
             medians = [np.mean(x.masses) for x in self.scans]
 
@@ -141,7 +214,7 @@ class Spectrum:
             scan_groups = {}
 
             for index, group in enumerate(np.unique(binnumber)):
-                scan_groups[index] = self.scans[binnumber == group]
+                scan_groups[index] = np.array(self.scans)[binnumber == group]
 
             return scan_groups
 
@@ -193,9 +266,6 @@ class Spectrum:
                 scan.masses = masses
                 scan.intensities = intensities
 
-        self._masses = False
-        self._intensities = False
-
         if scan_grouping:
             scan_groups = _determine_scan_group()
         else:
@@ -206,21 +276,9 @@ class Spectrum:
             bins = _get_bins(scan_list)
             non_spurios_masses = _calculate_bins(scan_list, bins)
             _remove_from_scans(scan_list, non_spurios_masses)
+        
+        self.load_scans()
 
-    def _get_masses_and_ints(self):
-        masses = []
-        intensities = []
-        for scan in self.read_scans:
-            masses.extend(scan.masses.tolist())
-            intensities.extend(scan.intensities.tolist())
-
-        masses = np.array(masses)
-        intensities = np.array(intensities)
-
-        sorted_idx = np.argsort(masses)
-
-        self._masses = masses[sorted_idx]
-        self._intensities = intensities[sorted_idx]
 
     @property
     def scans(self):
