@@ -226,7 +226,7 @@ class Spectrum:
 
         def _calculate_bins(scan_list, bins):
 
-            scan_index = {}
+            scan_index = []
 
             for index, scan in enumerate(scan_list):
 
@@ -240,17 +240,11 @@ class Spectrum:
                     number_bins = np.count_nonzero(binnumber == bin_index)
                     counts.append(number_bins)
 
-                scan_index[index] = counts
+                scan_index.append(np.array(counts))
 
-            df = pd.DataFrame(scan_index).T
-            df.columns = bins
-            df = df.loc[:, (df != 0).any(axis=0)]
 
-            df = df.replace(0, np.nan)
-
-            to_keep = df.columns[df[df.columns].isnull().sum() <= len(df) *
-                                 threshold]
-            return to_keep
+            _tmp_si = np.array(scan_index)
+            return bins[_tmp_si.sum(axis=0) >= threshold]
 
         def _remove_from_scans(scan_list, non_spurios_masses):
             for scan in scan_list:
