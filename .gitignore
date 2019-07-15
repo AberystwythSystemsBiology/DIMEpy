@@ -149,8 +149,6 @@ fabric.properties
 
 test.p*
 
-
-
 # Created by https://www.gitignore.io/api/visualstudiocode
 # Edit at https://www.gitignore.io/?templates=visualstudiocode
 
@@ -165,5 +163,4 @@ test.p*
 # Ignore all local history of files
 .history
 
-# End of https://www.gitignore.io/api/visualstudiocode
 
