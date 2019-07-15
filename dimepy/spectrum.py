@@ -58,14 +58,13 @@ class Spectrum:
         self.stratification = stratification
         self.snr_estimator = snr_estimator
 
+        self.read_scans = []
+        self._masses = False
+        self._intensities = False
+
         self._scans, self._to_use = self._base_load()
 
-        self.scans = []
 
-        self.masses = False
-        self.intensities = False
-    
-    @staticmethod
     def _base_load(self) -> Tuple[np.array, np.array]:
         extraAccessions=[
             [[y, ["value"]] for y in terms[x]] for x in terms.keys()
@@ -84,7 +83,6 @@ class Spectrum:
             to_use.append(True)
 
         return np.array(scans), np.array(to_use)
-
 
 
     def limit_polarity(self, polarity: str) -> None:
@@ -115,16 +113,21 @@ class Spectrum:
             self._to_use[sel] = apex_index[indx]
 
     def reset(self) -> None:
-        self._to_use = self._to_use[np.where(self._to_use == False)] == True
-        self.masses = False
-        self.intensities = False
-        self.scans = []
+        self._to_use = self._to_use == False
+        self._masses = False
+        self._intensities = False
+        self.read_scans = []
 
     def load_scans(self) -> None:
         scans = []
+        masses = []
+        intensities = []
         for scan in self._scans[self._to_use]:
             scans.append(Scan(scan, snr_estimator=self.snr_estimator))
-        self.scans = scans
+        self.read_scans = scans
+
+        self._get_masses_and_ints()
+
 
 
     def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
@@ -239,9 +242,28 @@ class Spectrum:
             non_spurios_masses = _calculate_bins(scan_list, bins)
             _remove_from_scans(scan_list, non_spurios_masses)
 
+
+    def _get_masses_and_ints(self):
+        masses = []
+        intensities = []
+        for scan in self.read_scans:
+            masses.extend(scan.masses.tolist())
+            intensities.extend(scan.intensities.tolist())
+
+        masses = np.array(masses)
+        intensities = np.array(intensities)
+
+        sorted_idx = np.argsort(masses)
+
+        self._masses = masses[sorted_idx]
+        self._intensities = intensities[sorted_idx]
+        
+            
+
+
     @property
     def scans(self):
-        return self._scans[self._to_use == True]
+        return self.read_scans
 
     @property
     def masses(self):
