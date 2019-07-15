@@ -218,13 +218,13 @@ class Spectrum:
 
             return scan_groups
 
-        def _get_bins(scan_list):
+        def _get_bins(scan_list: list) -> np.array:
             mass_ranges = np.array([x.mass_range for x in scan_list])
-            min_mass = np.min([x[0] for x in mass_ranges])
+            min_mass = np.min([x[0] for x in mass_ranges]) - bin_width
             max_mass = np.max([x[1] for x in mass_ranges]) + bin_width
             return np.arange(min_mass, max_mass, step=bin_width)
 
-        def _calculate_bins(scan_list, bins):
+        def _calculate_bins(scan_list: list, bins: np.array) -> np.array:
 
             scan_index = []
 
@@ -246,7 +246,7 @@ class Spectrum:
             _tmp_si = np.array(scan_index)
             return bins[_tmp_si.sum(axis=0) >= len(scan_list) threshold]
 
-        def _remove_from_scans(scan_list, non_spurios_masses):
+        def _remove_from_scans(scan_list: list, non_spurios_masses: np.array)- > None:
             for scan in scan_list:
                 masses = []
                 intensities = []
