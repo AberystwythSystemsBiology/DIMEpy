@@ -17,9 +17,12 @@
 
 import itertools
 import numpy as np
-import matplotlib.pyplot as plt
+from typing import Tuple, List
+
 import math
 from scipy.stats import binned_statistic
+from joblib import Parallel , delayed
+
 
 import pandas as pd
 
@@ -31,7 +34,14 @@ from .scan import Scan
 
 class Spectrum:
 
-    def __init__(self, filepath: str, identifier: str = None, injection_order: int = None, stratification: str = None, snr_estimator: str = False):
+    def __init__(
+        self,
+        filepath: str,
+        identifier: str = None,
+        injection_order: int = None,
+        stratification: str = None,
+        snr_estimator: str = False
+        ):
         """
         Initialise Spectrum object for a given mzML file.
 
@@ -48,13 +58,15 @@ class Spectrum:
         self.stratification = stratification
         self.snr_estimator = snr_estimator
 
-        self._scans, self._to_use = self.load()
+        self._scans, self._to_use = self._base_load()
 
-        self._masses = False
-        self._intensities = False
+        self.scans = []
 
-
-    def load(self):
+        self.masses = False
+        self.intensities = False
+    
+    @staticmethod
+    def _base_load(self) -> Tuple[np.array, np.array]:
         extraAccessions=[
             [[y, ["value"]] for y in terms[x]] for x in terms.keys()
         ]
@@ -67,62 +79,53 @@ class Spectrum:
         scans = []
         to_use = []
 
-        for index, pymzmlSpectrumInstance in enumerate(reader):
-            scan = Scan(pymzmlSpectrumInstance, snr_estimator=self.snr_estimator)
-
+        for scan in reader:
             scans.append(scan)
             to_use.append(True)
 
         return np.array(scans), np.array(to_use)
 
 
-    def get_polarity(self, polarity: str):
+
+    def limit_polarity(self, polarity: str) -> None:
+
+        def _determine_polarity(scan) -> str:
+            scan_polarity = None
+            for polarity_acc in terms["polarity"]:
+                if scan.get(polarity_acc) != None:
+                    scan_polarity = terms["polarity"][polarity_acc]
+
+            return scan_polarity
+
         for index, scan in enumerate(self._scans):
-            if scan.polarity != polarity.upper():
+            if _determine_polarity(scan) != polarity.upper():
                 self._to_use[index] = False
 
 
-    def get_apex(self, mad_multiplyer: int = 1, filename: str = False):
-        tics = np.array([scan.total_ion_count for scan in self.scans])
+    def limit_apex(self, mad_multiplyer: int = 1) -> None:
+
+        tics = np.array([scan.TIC for scan in self._scans])
         mad = np.mean(np.absolute(np.array(tics) - np.mean(tics)))
 
         apex_index = tics >= mad * mad_multiplyer
-
-        if filename:
-            plt.figure()
-            plt.title("Apex Plot: %s" % self.identifier)
-            plt.plot(tics)
-            plt.ylabel("Total Ion Count")
-            plt.xlabel("Scan Number")
-            plt.tight_layout()
-            plt.savefig(filename)
 
         sel = np.where(self._to_use == True)[0]
 
         for indx, sel in enumerate(sel):
             self._to_use[sel] = apex_index[indx]
 
-
-    def reset(self):
+    def reset(self) -> None:
         self._to_use = self._to_use[np.where(self._to_use == False)] == True
-        self._masses = False
-        self._intensities = False
+        self.masses = False
+        self.intensities = False
+        self.scans = []
 
-    def get(self):
-        masses = []
-        intensities = []
+    def load_scans(self) -> None:
+        scans = []
+        for scan in self._scans[self._to_use]:
+            scans.append(Scan(scan, snr_estimator=self.snr_estimator))
+        self.scans = scans
 
-        for scan in self.scans:
-            masses.extend(scan.masses)
-            intensities.extend(scan.intensities)
-
-        spectrum = list(zip(masses, intensities))
-
-        # Sort by masses
-        spectrum.sort(key=lambda x: float(x[0]))
-
-        self._masses = np.array([x[0] for x in spectrum])
-        self._intensities = np.array([x[1] for x in spectrum])
 
     def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
         min_mass, max_mass = self.mass_range
@@ -150,9 +153,6 @@ class Spectrum:
 
         self._masses = binned_masses[index]
         self._intensities = binned_intensities[index]
-
-    def _calculate_mass_range(self):
-        return [np.min(self.masses), np.max(self.masses)]
 
 
     def remove_spurious_peaks(self, bin_width: float = 0.01, threshold: float = 0.5, scan_grouping: int = 50.0):
@@ -259,4 +259,4 @@ class Spectrum:
 
     @property
     def mass_range(self):
-        return self._calculate_mass_range()
+        return [np.min(self.masses), np.max(self.masses)]
