@@ -19,16 +19,11 @@ import itertools
 import numpy as np
 from typing import Tuple, List
 
-import math
 from scipy.stats import binned_statistic
-from joblib import Parallel, delayed
-
-import pandas as pd
-
 from pymzml.run import Reader as pymzmlReader
 
-from .utils import terms, bin_masses_and_intensities
 from .scan import Scan
+from .utils import terms, bin_masses_and_intensities
 
 
 class Spectrum:
@@ -244,9 +239,9 @@ class Spectrum:
 
 
             _tmp_si = np.array(scan_index)
-            return bins[_tmp_si.sum(axis=0) >= len(scan_list) threshold]
+            return bins[_tmp_si.sum(axis=0) >= len(scan_list) * threshold]
 
-        def _remove_from_scans(scan_list: list, non_spurios_masses: np.array)- > None:
+        def _remove_from_scans(scan_list: list, non_spurios_masses: np.array) -> None:
             for scan in scan_list:
                 masses = []
                 intensities = []
@@ -275,18 +270,18 @@ class Spectrum:
 
 
     @property
-    def scans(self):
+    def scans(self) -> List[Scan]:
         return self.read_scans
 
     @property
-    def masses(self):
+    def masses(self) -> np.array:
         if type(self._masses) != bool:
             return self._masses
         else:
             raise ValueError("No masses generated, run Spectrum.get first.")
 
     @property
-    def intensities(self):
+    def intensities(self) -> np.array:
         if type(self._intensities) != bool:
             return self._intensities
         else:
@@ -294,5 +289,5 @@ class Spectrum:
                 "No intensities generated, run Spectrum.get first")
 
     @property
-    def mass_range(self):
+    def mass_range(self) -> Tuple[float, float]:
         return [np.min(self.masses), np.max(self.masses)]
