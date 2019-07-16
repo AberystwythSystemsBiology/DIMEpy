@@ -22,15 +22,14 @@ import math
 from typing import Tuple, List
 from .utils import bin_masses_and_intensities
 
-class SpectrumList:
 
+class SpectrumList:
     def __init__(self):
         self._list = []
 
         self.binned = False
         self.normalised = False
         self.transformed = False
-
 
     def append(self, spectrum: Spectrum):
         """
@@ -53,39 +52,33 @@ class SpectrumList:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
             statistic (str): The statistic to use to calculate bin values.
         """
-
         def _get_global_mass_range() -> Tuple[float, float]:
             mass_ranges = [s.mass_range for s in self._list]
-            
+
             min_mass = min([_min for _min, _max in mass_ranges]) - bin_width
             max_mass = max([_max for _min, _max in mass_ranges]) + bin_width
 
             return min_mass, max_mass
 
-
         def _get_global_bins(min_mass: float, max_mass: float):
             bins = np.arange(min_mass, max_mass, step=bin_width)
 
-            bin_dict = {x : [] for x in bins}
+            bin_dict = {x: [] for x in bins}
             intensities = []
 
             for spec in self._list:
                 m = spec.masses
                 i = spec.intensities
 
-                binned_i, _, _ = binned_statistic(
-                    m,
-                    i,
-                    statistic=statistic,
-                    bins=bins
-                )
+                binned_i, _, _ = binned_statistic(m,
+                                                  i,
+                                                  statistic=statistic,
+                                                  bins=bins)
 
-                binned_m, _, _ = binned_statistic(
-                    m,
-                    m,
-                    statistic=statistic,
-                    bins=bins
-                )
+                binned_m, _, _ = binned_statistic(m,
+                                                  m,
+                                                  statistic=statistic,
+                                                  bins=bins)
 
                 index = ~np.isnan(binned_i)
 
@@ -112,15 +105,11 @@ class SpectrumList:
         bin_dict, intensities = _get_global_bins(min_mass, max_mass)
         masses = _get_masses(bin_dict)
 
-        
         # Apply to spectrum objects
         for index, (intensities, mass_index) in enumerate(intensities):
             s = self._list[index]
             s._masses = masses[:-1][mass_index]
             s._intensities = intensities
-
-        
-
 
     def normalise(self, method: str = "tic") -> None:
         """
@@ -133,13 +122,14 @@ class SpectrumList:
             i = spec.intensities
 
             if method.upper() == "TIC":
-                spec._intensities = np.divide(i,  np.sum(i)) * 1000
+                spec._intensities = np.divide(i, np.sum(i)) * 1000
             elif method.upper() == "MEDIAN":
                 spec._intensities = i - np.median(i) * 1000
             elif method.upper() == "MEAN":
                 spec._intensities = i - np.mean(i) * 1000
             else:
-                raise ValueError("%s is not a valid normalisation method" % (method))
+                raise ValueError("%s is not a valid normalisation method" %
+                                 (method))
 
         if self.normalised:
             for spec in self._list:
@@ -147,7 +137,8 @@ class SpectrumList:
 
             self.normalised = True
         else:
-            raise ValueError("It looks like you've already normalised this data.")
+            raise ValueError(
+                "It looks like you've already normalised this data.")
 
     def transform(str, method: str = "log10") -> None:
         """
@@ -169,7 +160,7 @@ class SpectrumList:
                 spec._intensities = np.log2(i)
             elif method.upper() == "GLOG":
                 m = np.min(i) / 10
-                spec._intensities = np.log2(i + np.sqrt(i ** 2 + m ** 2)) / 2
+                spec._intensities = np.log2(i + np.sqrt(i**2 + m**2)) / 2
             elif method.upper() == "SQRT":
                 spec._intensities = np.sqrt(i)
             elif method.upper() == "IHS":
@@ -180,4 +171,5 @@ class SpectrumList:
                 _transform(spec)
             self.transformed = True
         else:
-            raise ValueError("It looks like you've already transformed this data.")
+            raise ValueError(
+                "It looks like you've already transformed this data.")

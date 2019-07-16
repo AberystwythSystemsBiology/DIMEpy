@@ -151,7 +151,6 @@ class Spectrum:
         self.read_scans = scans
         self._load_masses_and_ints_from_scans()
 
-
     def _load_masses_and_ints_from_scans(self) -> None:
 
         masses = []
@@ -159,8 +158,8 @@ class Spectrum:
 
         for scan in self.read_scans:
             masses.extend(scan.masses)
-            intensities.extend(scan.intensities) 
-        
+            intensities.extend(scan.intensities)
+
         masses = np.array(masses)
         intensities = np.array(intensities)
 
@@ -168,7 +167,6 @@ class Spectrum:
 
         self._masses = masses[sorted_idx]
         self._intensities = intensities[sorted_idx]
-
 
     def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
         """
@@ -243,11 +241,11 @@ class Spectrum:
 
                 scan_index.append(np.array(counts))
 
-
             _tmp_si = np.array(scan_index)
             return bins[_tmp_si.sum(axis=0) >= len(scan_list) * threshold]
 
-        def _remove_from_scans(scan_list: list, non_spurios_masses: np.array) -> None:
+        def _remove_from_scans(scan_list: list,
+                               non_spurios_masses: np.array) -> None:
             for scan in scan_list:
                 masses = []
                 intensities = []
@@ -271,12 +269,9 @@ class Spectrum:
             bins = _get_bins(scan_list)
             non_spurios_masses = _calculate_bins(scan_list, bins)
             _remove_from_scans(scan_list, non_spurios_masses)
-        
-        
+
         # Load in new masses and intensities.
         self._load_masses_and_ints_from_scans()
-        
-
 
     @property
     def scans(self) -> List[Scan]:

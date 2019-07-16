@@ -21,6 +21,7 @@ from .utils import bin_masses_and_intensities, terms
 import math
 from typing import Tuple
 
+
 class Scan:
     def __init__(self,
                  pymzml_spectrum,
@@ -61,7 +62,6 @@ class Scan:
                 polarity = terms["polarity"][polarity_accession]
         return polarity
 
-
     @property
     def mass_range(self) -> Tuple[float, float]:
         return np.min(self.masses), np.max(self.masses)
@@ -83,7 +83,6 @@ class Scan:
             raise ValueError("%s is not a supported peak type." %
                              (self.peak_type))
 
-
     def bin(self, bin_width: float = 0.01, statistic: str = "mean") -> None:
         """
         Method to conduct mass binning to nominal mass and mass spectrum
@@ -95,4 +94,3 @@ class Scan:
         """
         self.masses, self.intensities = bin_masses_and_intensities(
             self.masses, self.intensities, bin_width, statistic)
-
