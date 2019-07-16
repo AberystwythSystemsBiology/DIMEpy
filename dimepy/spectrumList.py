@@ -17,8 +17,9 @@
 
 import numpy as np
 from scipy.stats import binned_statistic
-import pandas as pd
 from .spectrum import Spectrum
+import math
+
 
 class SpectrumList:
 
@@ -26,6 +27,8 @@ class SpectrumList:
         self._list = []
 
         self.binned = False
+        self.normalised = False
+        self.transformed = False
 
 
     def append(self, spectrum: Spectrum):
@@ -71,7 +74,43 @@ class SpectrumList:
             else:
                 raise ValueError("%s is not a valid normalisation method" % (method))
 
-        for spec in self._list:
-            _normie(spec)
+        if self.normalised:
+            for spec in self._list:
+                _normie(spec)
 
-    def transform(str, method: str = "log10")
+            self.normalised = True
+        else:
+            raise ValueError("It looks like you've already normalised this data.")
+
+    def transform(str, method: str = "log10") -> None:
+        """
+        Method to conduct sample independent intensity transformation.
+
+        Arguments:
+            method (str): The transformation method to use.
+        """
+        def _transform(spec: Spectrum):
+            i = spec.intensities
+
+            if method.upper() == "LOG10":
+                spec._intensities = np.log10(i)
+            elif method.upper() == "CUBE":
+                spec._intensities = i**(1. / 3)
+            elif method.upper() == "NLOG":
+                spec._intensities = np.log(i)
+            elif method.upper() == "LOG2":
+                spec._intensities = np.log2(i)
+            elif method.upper() == "GLOG":
+                m = np.min(i) / 10
+                spec._intensities = np.log2(i + np.sqrt(i ** 2 + m ** 2)) / 2
+            elif method.upper() == "SQRTasinh":
+                spec._intensities = np.sqrt(i)
+            elif method.upper() == "IHS":
+                spec._intensities = np.array([math.asinh(x) for x in i])
+
+        if self.transformed:
+            for spec in self._list:
+                _transform(spec)
+            self.transformed = True
+        else:
+            raise ValueError("It looks like you've already transformed this data.")
