@@ -19,6 +19,7 @@ import numpy as np
 from scipy.stats import binned_statistic
 from .spectrum import Spectrum
 import math
+from typing import Tuple
 
 
 class SpectrumList:
@@ -53,7 +54,18 @@ class SpectrumList:
             statistic (str): The statistic to use to calculate bin values.
         """
 
-        pass
+        def _get_global_mass_range() -> Tuple[float, float]:
+            mass_ranges = [s.mass_range for s in self._list]
+            
+            min_mass = min([_min for _min, _max in mass_ranges]) - bin_width
+            max_mass = max([_max for _min, _max in mass_ranges]) + bin_width
+
+            return min_mass, max_mass
+
+
+        min_mass, max_mass = _get_global_mass_range()
+        bins = np.arange(min_mass, max_mass, step=self.bin_width)
+
 
     def normalise(self, method: str = "tic") -> None:
         """

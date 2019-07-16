@@ -1,13 +1,26 @@
-# DIMEpy: Direct Infusion MEtablomics (DIME) Processing in Python
+# DIMEpy: Direct Infusion MEtablomics processing in python
 
-Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry from ```mzML``` files.
+Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from ```mzML``` files.
 
-Implementation of the methods detailed in:
+This is very much an implementation and extension of the  of the methods detailed in High-throughput, nontargeted metabolite fingerprinting using nominal mass flow injection electrospray mass spectrometry (Beckmann, et al, 2008).
 
-```
-High-throughput, nontargeted metabolite fingerprinting using nominal mass flow injection electrospray mass spectrometry
+## Features
 
-Beckmann, et al. (2008) - doi:10.1038/nprot.2007.500
+- Loading mass spectrometry files from mzML.
+  - Support for polarity switching.
+  - MAD-estimated infusion profiling.
+- Spurious peak elimination.
+- Spectrum export for direct dissemination using Metaboanalyst.
+- Spectral binning.
+- Spectral normalisation.
+  - 
+- Spectral transformation.
+  -
+
+## Usage
+
+```python
+# This will be rewritten shortly.
 ```
 
 ## Installation
@@ -20,10 +33,10 @@ You can install it through ```pypi``` using ```pip```:
 pip install dimepy
 ```
 
-alternatively install it manually using ```git```:
+If you want the 'bleeding edge' version this, you can also install directly from this repository using ```git```:
 
 ```
-git clone https://www.github.com/KeironO/DIMEpy
+git clone https://www.github.com/AberystwythSystemsBiology/DIMEpy
 cd DIMEpy
 python setup.py install
 ```
@@ -31,62 +44,19 @@ python setup.py install
 Or use ```git``` and ```pip``` in unison.
 
 ```
-pip install git+https://www.github.com/KeironO/DIMEpy
+pip install git+https://www.github.com/AberystwythSystemsBiology/DIMEpy
 ```
 
 ## Bug reporting
 
-Please report all bugs you find in the issues tracker. We would welcome all sorts of contribution, so please be as candid as you want.
+Please report all bugs you find in the issues tracker, please do not email me directly as I'm struggling to keep track of what needs to be fixed. We welcome all sorts of contribution, so please be as candid as you want.
 
 ## Contributors
 
-* Keiron O'Shea (keo7@aber.ac.uk)
-
-## Usage
-
-The following script takes a path containing mzML files, processes them following the Beckmann, et al protocol and exports the result to a comma-seperated file.
-
-```python
-
-# Importing modules required to run this script.
-from dimepy import Spectrum, SpectrumList
-import os
-
-# Path containing mzML files.
-mzMLpaths = "/dir/to/mzMLs/"
-
-# List to store the spectra
-l = []
-
-for index, file in enumerate(os.listdir(mzMLpaths)):
-  filepath = os.path.join(mzMLpaths, file)
-  # Load in the spectrum directly using default parameters.
-  spectrum = Spectrum(filepath, identifier=file)
-  spec.load()
-  spec.get_polarity("positive")
-  spec.get_apex(3)
-  spec.get()
-
-  for scan in spec.scans:
-    scan.bin()
-
-  spec.remove_spurious_peaks()
-  spec.get()
-
-  l.append(spec)
-
-spectrum_list = SpectrumList(l, bin_width=0.02)
-
-spectrum_list.df.to_csv("/tmp/raw_ish.csv")
-
-spectrum_list.transform()
-spectrum_list.normalise()
-
-spectrum_list.value_imputate()
-
-spectrum_list.df.to_csv("/tmp/final.csv")
-
-```
+* **Lead Developer:** Keiron O'Shea (keo7@aber.ac.uk)
+* **Project Supervisor:** Chuan Lu (cul@aber.ac.uk)
+* **Project Supervisor:** Luis AJ Mur (lum@aber.ac.uk)
+* **Methods Expert:** Manfred Beckmann (meb@aber.ac.uk)
 
 ## License
 
