@@ -49,59 +49,29 @@ class SpectrumList:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
             statistic (str): The statistic to use to calculate bin values.
         """
-        def _get_mass_range():
-            mass_range = [x.mass_range for x in self._list]
-            min_mass = np.min(np.min([x[0] for x in mass_range])) - bin_width
-            max_mass = np.max(
-                np.max([x[1] for x in mass_range])) + bin_width
-            return min_mass, max_mass
 
-        def _calculate_bins(bins):
+        pass
 
-            bin_dict = {x: [] for x in bins}
+    def normalise(self, method: str = "tic") -> None:
+        """
+        Method to conduct sample independent intensity normalisation.
 
-            _intensities = []
+        Arguments:
+            method (str): The normalisation method to use.
+        """
+        def _normie(spec: Spectrum):
+            i = spec.intensities
 
-            for index, spectrum in enumerate(self._list):
-                masses = spectrum.masses
-                intensities = spectrum.intensities
+            if method.upper() == "TIC":
+                spec._intensities = np.divide(i,  np.sum(i)) * 1000
+            elif method.upper() == "MEDIAN":
+                spec._intensities = i - np.median(i) * 1000
+            elif method.upper() == "MEAN":
+                spec._intensities = i - np.mean(i) * 1000
+            else:
+                raise ValueError("%s is not a valid normalisation method" % (method))
 
-                binned_intensities, _, _ = binned_statistic(
-                    masses, intensities, statistic=statistic, bins=bins)
+        for spec in self._list:
+            _normie(spec)
 
-                binned_masses, _, _ = binned_statistic(
-                    masses, masses, statistic=statistic, bins=bins)
-
-                index = ~np.isnan(binned_intensities)
-
-                binned_masses = binned_masses[index]
-
-                for bin_indx, bin in enumerate(bins[:-1][index]):
-                    bin_dict[bin].append(binned_masses[bin_indx])
-
-                _intensities.append(binned_intensities)
-            
-            return _intensities, bin_dict
-
-        def calculate_masses(bin_dict):
-            bins = []
-            for bin in bin_dict:
-                if bin_dict[bin] != []:
-                    bins.append(np.mean(bin_dict[bin]))
-                else:
-                    bins.append(bin)
-            return sorted(bins)
-
-        min_mass, max_mass = _get_mass_range()
-
-        bins = np.arange(min_mass, max_mass, step=bin_width)
-        
-        intensities, bin_dict = _calculate_bins(bins)
-        masses = calculate_masses(bin_dict)
-        
-        for index, binned_ints in enumerate(intensities):
-            print(binned_ints[0])
-
-            not_null = np.where(binned_ints == np.nan)
-
-            print(not_null)
+    def transform(str, method: str = "log10")
