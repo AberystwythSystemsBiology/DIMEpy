@@ -13,9 +13,17 @@ This is very much an implementation and extension of the  of the methods detaile
 - Spectrum export for direct dissemination using Metaboanalyst.
 - Spectral binning.
 - Spectral normalisation.
-  - 
+  - TIC
+  - Median
+  - Mean
 - Spectral transformation.
-  -
+  - log10
+  - cube
+  - nlog
+  - log2
+  - glog
+  - sqrt
+  - ihs
 
 ## Usage
 
@@ -41,7 +49,7 @@ cd DIMEpy
 python setup.py install
 ```
 
-Or use ```git``` and ```pip``` in unison.
+Or use ```git``` and ```pip``` in unison:
 
 ```
 pip install git+https://www.github.com/AberystwythSystemsBiology/DIMEpy
