@@ -143,16 +143,24 @@ class Spectrum:
             limit_profile.
         """
         scans = []
-        masses = []
-        intensities = []
+
         for scan in self._scans[self._to_use]:
             scan = Scan(scan, snr_estimator=self.snr_estimator)
-
-            masses.extend(scan.masses.tolist())
-            intensities.extend(scan.intensities.tolist())
-
             scans.append(scan)
 
+        self.read_scans = scans
+        self._load_masses_and_ints_from_scans()
+
+
+    def _load_masses_and_ints_from_scans(self) -> None:
+
+        masses = []
+        intensities = []
+
+        for scan in self.read_scans:
+            masses.extend(scan.masses)
+            intensities.extend(scan.intensities) 
+        
         masses = np.array(masses)
         intensities = np.array(intensities)
 
@@ -160,8 +168,6 @@ class Spectrum:
 
         self._masses = masses[sorted_idx]
         self._intensities = intensities[sorted_idx]
-
-        self.read_scans = scans
 
 
     def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
@@ -178,7 +184,7 @@ class Spectrum:
 
     def remove_spurious_peaks(self,
                               bin_width: float = 0.01,
-                              threshold: float = 0.5,
+                              threshold: float = 0.25,
                               scan_grouping: float = 50.0):
         """
         Method that's highly influenced by Jasen Finch's (jsf9@aber.ac.uk)
@@ -266,7 +272,10 @@ class Spectrum:
             non_spurios_masses = _calculate_bins(scan_list, bins)
             _remove_from_scans(scan_list, non_spurios_masses)
         
-        self.load_scans()
+        
+        # Load in new masses and intensities.
+        self._load_masses_and_ints_from_scans()
+        
 
 
     @property

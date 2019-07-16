@@ -29,8 +29,10 @@ class Scan:
         """
             Initalise a Scan object for a given pymzML Spectrum.
 
-            Args:
-                pymzml_spectrum (pymzml.Spectrum): Spectrum object
+            Arguments:
+                pymzml_spectrum (pymzml.Spectrum): Spectrum object.
+                snr_estimator (str): Signal to noise method used to filter.
+                peak_type (str): Peaks to take forward.
 
         """
         self.pymzml_spectrum = pymzml_spectrum
@@ -83,6 +85,14 @@ class Scan:
 
 
     def bin(self, bin_width: float = 0.01, statistic: str = "mean") -> None:
+        """
+        Method to conduct mass binning to nominal mass and mass spectrum
+        generation.
+
+        Arguments:
+            bin_width (float): The mass-to-ion bin-widths to use for binning.
+            statistic (str): The statistic to use to calculate bin values.
+        """
         self.masses, self.intensities = bin_masses_and_intensities(
             self.masses, self.intensities, bin_width, statistic)
 
