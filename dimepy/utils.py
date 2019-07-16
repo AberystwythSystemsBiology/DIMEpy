@@ -26,12 +26,13 @@ terms = {"polarity": {"MS:1000129": "NEGATIVE", "MS:1000130": "POSITIVE"}}
 def bin_masses_and_intensities(masses: np.array,
                                intensities: np.array,
                                bin_width: float = 0.25,
-                               statistic: str = "mean"
-                               ) -> Tuple[np.array, np.array]:
+                               statistic: str = "mean",
+                               bins: list = None) -> Tuple[np.array, np.array]:
+    if type(bins) == None:
+        bins = np.arange(
+            np.min(masses) - bin_width,
+            np.max(masses) + bin_width, bin_width)
 
-    bins = np.arange(
-        np.min(masses) - bin_width,
-        np.max(masses) + bin_width, bin_width)
     statistic, bin_edges, bin_number = binned_statistic(masses,
                                                         intensities,
                                                         statistic=statistic,

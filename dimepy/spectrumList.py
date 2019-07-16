@@ -19,8 +19,8 @@ import numpy as np
 from scipy.stats import binned_statistic
 from .spectrum import Spectrum
 import math
-from typing import Tuple
-
+from typing import Tuple, List
+from .utils import bin_masses_and_intensities
 
 class SpectrumList:
 
@@ -63,8 +63,63 @@ class SpectrumList:
             return min_mass, max_mass
 
 
+        def _get_global_bins(min_mass: float, max_mass: float):
+            bins = np.arange(min_mass, max_mass, step=bin_width)
+
+            bin_dict = {x : [] for x in bins}
+            intensities = []
+
+            for spec in self._list:
+                m = spec.masses
+                i = spec.intensities
+
+                binned_i, _, _ = binned_statistic(
+                    m,
+                    i,
+                    statistic=statistic,
+                    bins=bins
+                )
+
+                binned_m, _, _ = binned_statistic(
+                    m,
+                    m,
+                    statistic=statistic,
+                    bins=bins
+                )
+
+                index = ~np.isnan(binned_i)
+
+                binned_m = binned_m[index]
+                binned_i = binned_i[index]
+
+                for indx, b in enumerate(bins[np.where(index == True)]):
+                    bin_dict[b].append(binned_m[indx])
+
+                intensities.append([binned_i, index])
+
+            return bin_dict, intensities
+
+        def _get_masses(bin_dict) -> np.array:
+            bins = []
+            for b, bi in bin_dict.items():
+                if bi != []:
+                    bins.append(np.mean(bi))
+                else:
+                    bins.append(b)
+            return np.array(bins)
+
         min_mass, max_mass = _get_global_mass_range()
-        bins = np.arange(min_mass, max_mass, step=self.bin_width)
+        bin_dict, intensities = _get_global_bins(min_mass, max_mass)
+        masses = _get_masses(bin_dict)
+
+        
+        # Apply to spectrum objects
+        for index, (intensities, mass_index) in enumerate(intensities):
+            s = self._list[index]
+            s._masses = masses[:-1][mass_index]
+            s._intensities = intensities
+
+        
 
 
     def normalise(self, method: str = "tic") -> None:
@@ -115,7 +170,7 @@ class SpectrumList:
             elif method.upper() == "GLOG":
                 m = np.min(i) / 10
                 spec._intensities = np.log2(i + np.sqrt(i ** 2 + m ** 2)) / 2
-            elif method.upper() == "SQRTasinh":
+            elif method.upper() == "SQRT":
                 spec._intensities = np.sqrt(i)
             elif method.upper() == "IHS":
                 spec._intensities = np.array([math.asinh(x) for x in i])
