@@ -30,7 +30,7 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.7",
         "Development Status :: 4 - Beta",
-        "Topic :: Scientific/Engineering :: Bioinformatics",
+        "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
