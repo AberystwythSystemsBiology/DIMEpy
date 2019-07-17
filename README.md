@@ -1,5 +1,8 @@
 # DIMEpy: Direct Infusion MEtablomics processing in python
 
+[![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](http://www.repostatus.org/badges/0.1.0/active.svg)](http://www.repostatus.org/#active)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/DIMEpy.svg)
+
 Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from mzML files.
 
 This is very much an implementation and extension of the  of the methods detailed in High-throughput, nontargeted metabolite fingerprinting using nominal mass flow injection electrospray mass spectrometry (Beckmann, et al, 2008).

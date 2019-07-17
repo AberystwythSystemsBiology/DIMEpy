@@ -25,9 +25,9 @@ setup(
     description="Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry.",
     classifiers=[
         "Programming Language :: Python",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
-        "Development Status :: 2 - Pre-Alpha",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.7",
+        "Development Status :: 3 - Alpha",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Operating System :: OS Independent",
