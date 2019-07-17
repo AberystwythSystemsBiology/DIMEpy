@@ -252,3 +252,9 @@ class SpectrumList:
         else:
             raise ValueError(
                 "It looks like you've already transformed this data.")
+  
+        def to_csv(self, output_type: str = "metaboanalyst"):
+            if output_type == "metaboanalyst":
+                pass
+            else:
+                pass
