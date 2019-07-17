@@ -98,11 +98,11 @@ array([ ... ])
 array([ ... ])
 ```
 
-## Working with multiple files
+### Working with multiple files
 
 A more realistic pipeline would be to use multiple mass-spectrum files. This is where things really start to get interesting. Given an 
 
-## I still don't get it, can I see some examples please?
+### I still don't get it, can I see some examples please?
 
 Examples can be found in the examples folder of this repository.
 
