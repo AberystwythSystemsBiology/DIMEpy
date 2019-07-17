@@ -115,13 +115,33 @@ If you're only using this pipeline to extract mass spectrum for Metabolanalyst, 
 >>> speclist.to_csv("/path/to/output.csv", output_type="metaboanalyst")
 ```
 
-That being said, this pipeline contains many of the preprocessing methods found in Metaboanalyst:
+That being said, this pipeline contains many of the preprocessing methods found in Metaboanalyst - so it may be easier for you to just use ours.
 
+A common first step in the analysis of mass-spectrometry data is to bin the data to a given mass-to-ion value. To do this for all ```Spectrum``` held within our ```SpectrumList``` object, simply apply the ```bin``` method:
+
+```python
+>>> speclist.bin(0.25) # binning our data to a bin width of 0.25 m/z
 ```
 
+In FIE-MS, null values should concern no more than 3% of the total number of identified bins. However, imputation is required to streamline the analysis process (as most multivariate techniques are unable to accomodate missing data points). To perform value imputation, just use ```value_imputate```:
+
+```python
+>>> speclist.value_imputate()
 ```
 
+Now transforming and normalisating the the spectrum objects in an samples independent fashion can be done using the following:
 
+```python
+>>> speclist.transform()
+>>> speclist.normalise()
+```
+
+Once completed, you are now free to export the data:
+
+```python
+>>> speclist.to_csv("/path/to/proc_metabo.csv", output_type="metaboanalyst")
+>>> speclist.to_csv("/path/to/proc_metabo.csv", output_type="matrix")
+```
 
 ### I still don't get it, can I see some examples please?
 
