@@ -30,7 +30,7 @@ class Spectrum:
 
     def __init__(self,
                  filepath: str,
-                 identifier: str = None,
+                 identifier: str,
                  injection_order: int = None,
                  stratification: str = None,
                  snr_estimator: str = False):

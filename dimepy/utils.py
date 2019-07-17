@@ -28,12 +28,12 @@ def bin_masses_and_intensities(masses: np.array,
                                bin_width: float = 0.25,
                                statistic: str = "mean",
                                bins: list = None) -> Tuple[np.array, np.array]:
-    if type(bins) == None:
+    if bins == None:
         bins = np.arange(
             np.min(masses) - bin_width,
             np.max(masses) + bin_width, bin_width)
 
-    statistic, bin_edges, bin_number = binned_statistic(masses,
+    statistic, _, bin_number = binned_statistic(masses,
                                                         intensities,
                                                         statistic=statistic,
                                                         bins=bins)
