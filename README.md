@@ -58,11 +58,14 @@ If you are only going to load in a single file for fingerprint matrix estimation
 /home/keo7/Projects/RachelSputum19/tissue-MZML/t1-1.mzML
 ```
 
+By default the Spectrum object doesn't set a snr estimator. It is **strongly recommended** that you set a signal to noise estimation method when instantiating the Spectrum object.
+
 If your experimental protocol makes use of mixed-polarity scanning, then please ensure that you limit the scan ranges to best match what polarity you're interested in analysing:
 
 ```python
 >>> spec.limit_polarity("negative")
 ```
+
 
 If you are using FIE-MS, then it is strongly recommended that you use just the infusion profile to generate your mass spectrum. For example, if your scan profiles look like this:
 
@@ -74,19 +77,19 @@ If you are using FIE-MS, then it is strongly recommended that you use just the i
         0     0.5     1     1.5     2 [min]
 ```
 
-Then it is fair to assume that the infusion occured during the scans ranging from 30 seconds to 1 minute. The ```limit_infusion()``` method does this by estimating the mean absolute deviation (MAD) of total ion counts (TIC) before limiting the profile to the range between the time range in which whatever multiple of MAD has been estimated.
+Then it is fair to assume that the infusion occured during the scans ranging from 30 seconds to 1 minute. The ```limit_infusion()``` method does this by estimating the mean absolute deviation (MAD) of total ion counts (TIC) before limiting the profile to the range between the time range in which whatever multiple of MAD has been estimated:
 
 ```python
 >>> spec.limit_infusion(2) # 2 times the MAD.
 ```
 
-Now, we are free to load in the scans to generate a base mass_spectrum.
+Now, we are free to load in the scans to generate a base mass_spectrum:
 
 ```python
 >>> spec.load_scans()
 ```
 
-You should now be able to access the generated mass spectrum using the ```masses``` and ```intensities``` attributes.
+You should now be able to access the generated mass spectrum using the ```masses``` and ```intensities``` attributes:
 
 ```python
 >>> spec.masses
@@ -94,6 +97,7 @@ array([ ... ])
 >>> spec.intensities
 array([ ... ])
 ```
+
 
 
 ## Bug reporting and feature suggestions
