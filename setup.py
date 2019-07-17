@@ -17,7 +17,11 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=open("requirements.txt").read().splitlines(),
+    install_requires=[
+        "numpy==1.16.4",
+        "pymzml==2.2.4",
+        "scipy==1.3.0"
+    ],
     platforms=["Windows", "UNIX", "Mac OS"],
     long_description=long_description,
     author="Keiron O'Shea",
