@@ -11,7 +11,7 @@ except (IOError, ImportError):
 
 setup(
     name="dimepy",
-    version="0.1.3",
+    version="0.9.9b",
     url='http://www.github.com/KeironO/dimepy',
     license="GPLv2",
     packages=find_packages(),
@@ -26,9 +26,11 @@ setup(
     classifiers=[
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.2",
+        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.7",
-        "Development Status :: 3 - Alpha",
-        "Topic :: Scientific/Engineering :: Bio-Informatics",
+        "Development Status :: 4 - Beta",
+        "Topic :: Scientific/Engineering :: Bioinformatics",
         "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
         "Operating System :: OS Independent",
         "Intended Audience :: Science/Research",
