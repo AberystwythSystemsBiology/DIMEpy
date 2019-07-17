@@ -100,7 +100,22 @@ array([ ... ])
 
 ### Working with multiple files
 
-A more realistic pipeline would be to use multiple mass-spectrum files. This is where things really start to get interesting. Given an 
+A more realistic pipeline would be to use multiple mass-spectrum files. This is where things really start to get interesting. The ```SpectrumList``` object facilitates this through the use of the ```append``` method:
+
+```python
+speclist = dimepy.SpectrumList()
+speclist.append(spec)
+```
+
+You can make use of an iterator to recursively generate ```Spectrum``` objects, or do it manually if you want.
+
+If you're only using this pipeline to extract mass spectrum for Metabolanalyst, then you can now simply call the ```_to_csv``` method:
+
+```python
+speclist.to_csv("/path/to/output.csv", output_type="metaboanalyst")
+```
+
+
 
 ### I still don't get it, can I see some examples please?
 
