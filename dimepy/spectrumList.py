@@ -48,6 +48,10 @@ class SpectrumList:
         else:
             raise ValueError("SpectrumList only accepts Spectrum objects.")
 
+
+    def outlier_detection(self):
+        pass
+
     def bin(self, bin_width: float = 0.5, statistic: str = "mean"):
         """
         Method to conduct mass binning to nominal mass and mass spectrum
