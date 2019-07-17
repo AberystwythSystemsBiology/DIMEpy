@@ -144,11 +144,11 @@ Once completed, you are now free to export the data to a data matrix:
 
 This should give you something akin to:
 
-| Sample ID | M0 | M1 | M2 | ... |
+| Sample ID | M0 | M1 | M2 | M3 |... |
 |-----------|----|----|----|-----|
-| Sample 1 | 213 | 634 | 3213 | ... |
-| Sample 2 | 132 | 34 | 713 | ... |
-
+| Sample 1 | 213 | 634 | 3213 | 546 | ... |
+| Sample 2 | 132 | 34 | 713 | 6546 |... |
+| Sample 3 | 1337  | 42 | 69 | 420 | ... |
 
 ### I still don't get it, can I see some examples please?
 
