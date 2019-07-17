@@ -32,15 +32,13 @@ You can install it through ```pypi``` using ```pip```:
 pip install dimepy
 ```
 
-If you want the 'bleeding edge' version this, you can also install directly from this repository using ```git```:
+If you want the 'bleeding edge' version this, you can also install directly from this repository using ```git``` - but beware of dragons:
 
 ```
 pip install git+https://www.github.com/AberystwythSystemsBiology/DIMEpy
 ```
 
 ## Usage
-
-
 
 ```python
 # This will be rewritten shortly.
