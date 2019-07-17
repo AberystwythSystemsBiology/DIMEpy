@@ -158,11 +158,6 @@ This should give you something akin to:
 | Sample 2 | 132 | 34 | 713 | 6546 |... |
 | Sample 3 | 1337  | 42 | 69 | 420 | ... |
 
-### I still don't get it, can I see some examples please?
-
-Examples can be found in the examples folder of this repository.
-
-
 ## Bug reporting and feature suggestions
 
 Please report all bugs or feature suggestions to the [issues tracker](https://github.com/AberystwythSystemsBiology/DIMEpy/issues). **Please do not email me directly** as I'm struggling to keep track of what needs to be fixed. 
