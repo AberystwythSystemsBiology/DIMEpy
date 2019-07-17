@@ -31,6 +31,8 @@ class SpectrumList:
         self.normalised = False
         self.transformed = False
 
+        self._global_masses = False
+
     def append(self, spectrum: Spectrum):
         """
         Method to append a Spectrum to the SpectrumList.
@@ -99,17 +101,65 @@ class SpectrumList:
                     bins.append(np.mean(bi))
                 else:
                     bins.append(b)
-            return np.array(bins)
+            return np.array(bins)[:-1]
 
         min_mass, max_mass = _get_global_mass_range()
         bin_dict, intensities = _get_global_bins(min_mass, max_mass)
-        masses = _get_masses(bin_dict)
+        self._global_masses = _get_masses(bin_dict)
 
         # Apply to spectrum objects
         for index, (intensities, mass_index) in enumerate(intensities):
             s = self._list[index]
-            s._masses = masses[:-1][mass_index]
+            s._masses = self._global_masses[mass_index]
             s._intensities = intensities
+
+        self.binned = True
+
+    def value_imputate(self, method: str = "min",
+                       threshold: float = 0.5) -> None:
+
+        def _extend_spectrum():
+            for spec in self._list:
+                m = spec.masses
+                i = spec.intensities
+                
+                is_in = np.intersect1d(self._global_masses, m, return_indices=True)[1]
+
+                # Empty intensities
+                exp_i = np.empty(self._global_masses.shape)
+                # Replace with np.nans
+                exp_i[:] = np.nan
+                # Put the mass masked data in.
+                exp_i[is_in] = i
+
+                spec._masses = self._global_masses
+                spec._intensities = exp_i
+        
+        def _determine_to_keep():
+            global_intensities = np.array([s.intensities for s in self._list])
+            global_intensities[np.isnan(global_intensities)] = 0.0
+            non_zeros = np.count_nonzero(global_intensities, axis=0)
+            return non_zeros >= global_intensities.shape[0] * threshold
+
+            
+        def _apply_to_keep(to_keep):
+            for spec in self._list:
+                spec._masses = spec.masses[to_keep]
+                spec._intensities = spec.intensities[to_keep]
+
+        def _apply_imputation():
+            
+
+        if self.binned:   
+            _extend_spectrum()
+            to_keep = _determine_to_keep()
+            _apply_to_keep(to_keep)
+
+            
+
+        else:
+            raise ValueError(
+                "This only works where the SpectrumList has been binned.")
 
     def normalise(self, method: str = "tic") -> None:
         """
