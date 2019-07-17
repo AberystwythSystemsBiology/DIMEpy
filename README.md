@@ -54,7 +54,8 @@ If you are only going to load in a single file for fingerprint matrix estimation
 
 ```python
 >>> filepath = "/file/to/file.mzml"
->>> spec = Spectrum(filepath, identifier="example", stratification="class_one")
+>>> spec = dimepy.Spectrum(filepath, identifier="example", stratification="class_one")
+/home/keo7/Projects/RachelSputum19/tissue-MZML/t1-1.mzML
 ```
 
 If your experimental protocol makes use of mixed-polarity scanning, then please ensure that you limit the scan ranges to best match what polarity you're interested in analysing:
@@ -85,6 +86,14 @@ Now, we are free to load in the scans to generate a base mass_spectrum.
 >>> spec.load_scans()
 ```
 
+You should now be able to access the generated mass spectrum using the ```masses``` and ```intensities``` attributes.
+
+```python
+>>> spec.masses
+array([ ... ])
+>>> spec.intensities
+array([ ... ])
+```
 
 
 ## Bug reporting and feature suggestions
