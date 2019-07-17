@@ -256,5 +256,10 @@ class SpectrumList:
         def to_csv(self, fp: str, sep: str = ",", output_type: str = "metaboanalyst"):
             if output_type == "metaboanalyst":
                 pass
+            elif output_type == "matrix":
+                if self.binned:
+                    pass
+                else:
+                    raise(ValueError)
             else:
                 pass
