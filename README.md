@@ -72,7 +72,7 @@ If your experimental protocol makes use of mixed-polarity scanning, then please 
 ```
 
 
-If you are using FIE-MS, then it is strongly recommended that you use just the infusion profile to generate your mass spectrum. For example, if your scan profiles look like this:
+If you are using FIE-MS it is strongly recommended that you use just the infusion profile to generate your mass spectrum. For example, if your scan profiles look like this:
 
 ```
         |        _
@@ -135,7 +135,7 @@ A common first step in the analysis of mass-spectrometry data is to bin the data
 >>> speclist.bin(0.25) # binning our data to a bin width of 0.25 m/z
 ```
 
-In FIE-MS, null values should concern no more than 3% of the total number of identified bins. However, imputation is required to streamline the analysis process (as most multivariate techniques are unable to accomodate missing data points). To perform value imputation, just use ```value_imputate```:
+In FIE-MS null values should concern no more than 3% of the total number of identified bins. However, imputation is required to streamline the analysis process (as most multivariate techniques are unable to accomodate missing data points). To perform value imputation, just use ```value_imputate```:
 
 ```python
 >>> speclist.value_imputate()
