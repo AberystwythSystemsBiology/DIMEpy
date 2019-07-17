@@ -119,6 +119,14 @@ class SpectrumList:
 
     def value_imputate(self, method: str = "min",
                        threshold: float = 0.5) -> None:
+        """
+        A method to deploy value imputation to our spectrum list.
+
+        Arguments:
+            method (str): Method to use for value imputation.
+            threshold (float): Number of samples an intensity needs to be
+            present in to be taken forward for imputation.
+        """
 
         def _extend_spectrum():
             for spec in self._list:
