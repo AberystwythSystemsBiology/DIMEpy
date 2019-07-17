@@ -40,9 +40,22 @@ pip install git+https://www.github.com/AberystwythSystemsBiology/DIMEpy
 
 ## Usage
 
+To use the package, type the following into your Python console:
+
 ```python
-# This will be rewritten shortly.
+>>> import dimepy
 ```
+
+At the moment, this pipeline only supports mzML files. You can easily convert proprietary formats to mzML using [ProteoWizard](http://www.proteowizard.org/download.html).
+
+If you are only going to load in a single file for fingerprint matrix estimation, then just create a new spectrum object. If the sample belongs to a characteristic, it is recommend that you also pass it through when instantiating a new ```Spectrum``` object.
+
+```python
+>>> filepath = "/file/to/file.mzml"
+>>> spec = Spectrum(filepath, identifier="example", stratification="class_one")
+```
+
+If your experimental protocol makes use of mixed-polarity scanning, then please ensure that you  
 
 ## Bug reporting and feature suggestions
 
