@@ -77,6 +77,14 @@ Then it is fair to assume that the infusion occured during the scans ranging fro
 >>> spec.limit_infusion(2) # 2 times the MAD.
 ```
 
+Now, we are free to load in the scans to generate a base mass_spectrum.
+
+```python
+>>> spec.load_scans()
+```
+
+
+
 ## Bug reporting and feature suggestions
 
 Please report all bugs or feature suggestions to the [issues tracker](https://github.com/AberystwythSystemsBiology/DIMEpy/issues). **Please do not email me directly** as I'm struggling to keep track of what needs to be fixed. 
