@@ -27,6 +27,7 @@ from .utils import terms, bin_masses_and_intensities
 
 
 class Spectrum:
+
     def __init__(self,
                  filepath: str,
                  identifier: str = None,
@@ -56,8 +57,9 @@ class Spectrum:
         self._scans, self._to_use = self._base_load()
 
     def _base_load(self) -> Tuple[np.array, np.array]:
-        extraAccessions = [[[y, ["value"]] for y in terms[x]]
-                           for x in terms.keys()]
+        extraAccessions = [
+            [[y, ["value"]] for y in terms[x]] for x in terms.keys()
+        ]
 
         # Flatten the list of lists of lists into a list of lists.
         extraAccessions = list(itertools.chain.from_iterable(extraAccessions))
@@ -81,6 +83,7 @@ class Spectrum:
         Arguments:
             polarity (string): polarity type of the scans required (positive/negative)
         """
+
         def _determine_polarity(scan) -> str:
             scan_polarity = None
             for polarity_acc in terms["polarity"]:
@@ -200,6 +203,7 @@ class Spectrum:
             load_scans() must first be run in order for this to work.
 
         """
+
         def _determine_scan_group():
             medians = [np.mean(x.masses) for x in self.scans]
 
@@ -289,8 +293,7 @@ class Spectrum:
         if type(self._intensities) != bool:
             return self._intensities
         else:
-            raise ValueError(
-                "No intensities generated, run Spectrum.get first")
+            raise ValueError("No intensities generated, run Spectrum.get first")
 
     @property
     def mass_range(self) -> Tuple[float, float]:

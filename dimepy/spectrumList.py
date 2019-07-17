@@ -24,6 +24,7 @@ from .utils import bin_masses_and_intensities
 
 
 class SpectrumList:
+
     def __init__(self):
         self._list = []
 
@@ -54,6 +55,7 @@ class SpectrumList:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
             statistic (str): The statistic to use to calculate bin values.
         """
+
         def _get_global_mass_range() -> Tuple[float, float]:
             mass_ranges = [s.mass_range for s in self._list]
 
@@ -117,6 +119,7 @@ class SpectrumList:
 
     def value_imputate(self, method: str = "min",
                        threshold: float = 0.5) -> None:
+
         def _extend_spectrum():
             for spec in self._list:
                 m = spec.masses
@@ -148,12 +151,30 @@ class SpectrumList:
                 spec._intensities = spec.intensities[to_keep]
 
         def _apply_imputation():
-            pass
+            for s in self._list:
+                i = s.intensities
+
+                if method.upper() == "BASIC":
+                    filler = np.nanmin(i) / 2
+                elif method.upper() == "MEAN":
+                    filler = np.mean(i)
+                elif method.upper() == "MIN":
+                    filler = np.nanmin(i)
+                elif method.upper() == "MEDIAN":
+                    filler = np.nanmedian(i)
+                else:
+                    raise ValueError("%s is not a valid imputation method." %
+                                     method)
+
+                i[np.isnan(i)] = filler
+
+                s._intensities = i
 
         if self.binned:
             _extend_spectrum()
             to_keep = _determine_to_keep()
             _apply_to_keep(to_keep)
+            _apply_imputation()
 
         else:
             raise ValueError(
@@ -166,6 +187,7 @@ class SpectrumList:
         Arguments:
             method (str): The normalisation method to use.
         """
+
         def _normie(spec: Spectrum):
             i = spec.intensities
 
@@ -188,13 +210,14 @@ class SpectrumList:
             raise ValueError(
                 "It looks like you've already normalised this data.")
 
-    def transform(str, method: str = "log10") -> None:
+    def transform(self, method: str = "log10") -> None:
         """
         Method to conduct sample independent intensity transformation.
 
         Arguments:
             method (str): The transformation method to use.
         """
+
         def _transform(spec: Spectrum):
             i = spec.intensities
 

@@ -23,6 +23,7 @@ from typing import Tuple
 
 
 class Scan:
+
     def __init__(self,
                  pymzml_spectrum,
                  snr_estimator: str = False,

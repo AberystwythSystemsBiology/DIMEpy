@@ -40,7 +40,5 @@ def bin_masses_and_intensities(masses: np.array,
 
     bin_number = bin_number
 
-    masses = [
-        np.mean(masses[x]) for x in find_objects(bin_number) if x != None
-    ]
+    masses = [np.mean(masses[x]) for x in find_objects(bin_number) if x != None]
     return np.array(masses), statistic[~np.isnan(statistic)]
