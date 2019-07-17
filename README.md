@@ -136,12 +136,17 @@ Now transforming and normalisating the the spectrum objects in an samples indepe
 >>> speclist.normalise()
 ```
 
-Once completed, you are now free to export the data:
+Once completed, you are now free to export the data to a data matrix:
 
 ```python
->>> speclist.to_csv("/path/to/proc_metabo.csv", output_type="metaboanalyst")
 >>> speclist.to_csv("/path/to/proc_metabo.csv", output_type="matrix")
 ```
+
+This should give you something akin to:
+
+| Sample ID | M0 | M1 | M2 | .. |
+:-----------|----|----|----| .. |
+
 
 ### I still don't get it, can I see some examples please?
 
