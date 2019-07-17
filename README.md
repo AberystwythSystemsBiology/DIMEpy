@@ -55,7 +55,7 @@ If you are only going to load in a single file for fingerprint matrix estimation
 ```python
 >>> filepath = "/file/to/file.mzml"
 >>> spec = dimepy.Spectrum(filepath, identifier="example", stratification="class_one")
-/home/keo7/Projects/RachelSputum19/tissue-MZML/t1-1.mzML
+/file/to/file.mzml
 ```
 
 By default the Spectrum object doesn't set a snr estimator. It is **strongly recommended** that you set a signal to noise estimation method when instantiating the Spectrum object.
