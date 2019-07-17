@@ -20,6 +20,7 @@ This is very much an implementation and extension of the  of the methods detaile
   - including TIC, median, mean...
 - Spectral transformation.
   - including log10, cube, nlog, log2, glog, sqrt, ihs...
+- Export to array for statistical analysis in Metaboanalyst.
 
 ## Usage
 
