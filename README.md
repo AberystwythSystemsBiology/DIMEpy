@@ -12,6 +12,7 @@ This work is very much inspired by the methods detailed in [High-throughput, non
 - Loading mass spectrometry files from mzML.
   - Support for polarity switching.
   - MAD-estimated infusion profiling.
+- Assay-wide outlier spectrum detection.
 - Spurious peak elimination.
 - Spectrum export for direct dissemination using Metaboanalyst.
 - Spectral binning.
@@ -116,6 +117,13 @@ If you're only using this pipeline to extract mass spectrum for Metabolanalyst, 
 ```
 
 That being said, this pipeline contains many of the preprocessing methods found in Metaboanalyst - so it may be easier for you to just use ours.
+
+As a diagnostic measure, the TIC can provide an estimation of factos that may adversely affect the overal intensity count of a run. As a rule, it is common to remove spectrum in which the TIC deviates 2/3 times from the median-absolute deviation. We can do this by calling the ```detect_outliers``` method:
+
+```python
+>>> speclist.detect_outliers(thresh = 2, verbose=True)
+Detected Outliers: outlier_one;outlier_two 
+```
 
 A common first step in the analysis of mass-spectrometry data is to bin the data to a given mass-to-ion value. To do this for all ```Spectrum``` held within our ```SpectrumList``` object, simply apply the ```bin``` method:
 

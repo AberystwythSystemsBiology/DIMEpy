@@ -48,9 +48,48 @@ class SpectrumList:
         else:
             raise ValueError("SpectrumList only accepts Spectrum objects.")
 
+    def detect_outliers(self, threshold: float = 1, verbose: bool = False):
+        """
+        Method to locate and remove outlier spectrum using MAD.
 
-    def outlier_detection(self):
-        pass
+        Arguments:
+            threshold (int): Threshold for MAD outlier detection.
+        """
+
+        def _get_tics() -> Tuple[np.array, np.array]:
+            tics = []
+
+            for spec in self._list:
+                tics.append(np.sum(spec.intensities))
+
+            return np.array(tics)
+
+        def _calculate_mad(tics: np.array) -> float:
+            return np.median(np.abs(tics - np.median(tics)))
+
+        def _get_mask(tics: np.array, mad: float) -> np.array:
+            tics = tics[:, None]
+            median = np.median(tics, axis=0)
+            diff = np.sum((tics - median)**2, axis=-1)
+            diff = np.sqrt(diff)
+
+            med_abs_deviation = np.median(diff)
+
+            modified_z_score = 0.6745 * diff / med_abs_deviation
+
+            return modified_z_score <= threshold
+
+        tics = _get_tics()
+        mad = _calculate_mad(tics)
+        to_keep = _get_mask(tics, mad)
+
+        _list = np.array(self._list)
+
+        if verbose:
+            print("Detected Outliers: %s" %
+                  ";".join([x.identifier for x in _list[~to_keep]]))
+
+        self._list = _list[to_keep].tolist()
 
     def bin(self, bin_width: float = 0.5, statistic: str = "mean"):
         """
