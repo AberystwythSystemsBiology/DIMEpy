@@ -48,7 +48,7 @@ To use the package, type the following into your Python console:
 
 At the moment, this pipeline only supports mzML files. You can easily convert proprietary formats to mzML using [ProteoWizard](http://www.proteowizard.org/download.html).
 
-## Loading a single file
+### Loading a single file
 
 If you are only going to load in a single file for fingerprint matrix estimation, then just create a new spectrum object. If the sample belongs to a characteristic, it is recommend that you also pass it through when instantiating a new ```Spectrum``` object.
 
@@ -98,6 +98,9 @@ array([ ... ])
 array([ ... ])
 ```
 
+## Working with multiple files
+
+A more realistic pipeline would be to use multiple mass-spectrum files.
 
 
 ## Bug reporting and feature suggestions
