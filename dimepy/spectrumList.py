@@ -117,13 +117,14 @@ class SpectrumList:
 
     def value_imputate(self, method: str = "min",
                        threshold: float = 0.5) -> None:
-
         def _extend_spectrum():
             for spec in self._list:
                 m = spec.masses
                 i = spec.intensities
-                
-                is_in = np.intersect1d(self._global_masses, m, return_indices=True)[1]
+
+                is_in = np.intersect1d(self._global_masses,
+                                       m,
+                                       return_indices=True)[1]
 
                 # Empty intensities
                 exp_i = np.empty(self._global_masses.shape)
@@ -134,28 +135,25 @@ class SpectrumList:
 
                 spec._masses = self._global_masses
                 spec._intensities = exp_i
-        
+
         def _determine_to_keep():
             global_intensities = np.array([s.intensities for s in self._list])
             global_intensities[np.isnan(global_intensities)] = 0.0
             non_zeros = np.count_nonzero(global_intensities, axis=0)
             return non_zeros >= global_intensities.shape[0] * threshold
 
-            
         def _apply_to_keep(to_keep):
             for spec in self._list:
                 spec._masses = spec.masses[to_keep]
                 spec._intensities = spec.intensities[to_keep]
 
         def _apply_imputation():
-            
+            pass
 
-        if self.binned:   
+        if self.binned:
             _extend_spectrum()
             to_keep = _determine_to_keep()
             _apply_to_keep(to_keep)
-
-            
 
         else:
             raise ValueError(
