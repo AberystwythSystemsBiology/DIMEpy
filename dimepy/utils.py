@@ -34,9 +34,9 @@ def bin_masses_and_intensities(masses: np.array,
             np.max(masses) + bin_width, bin_width)
 
     statistic, _, bin_number = binned_statistic(masses,
-                                                        intensities,
-                                                        statistic=statistic,
-                                                        bins=bins)
+                                                intensities,
+                                                statistic=statistic,
+                                                bins=bins)
 
     bin_number = bin_number
 

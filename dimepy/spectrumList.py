@@ -23,6 +23,7 @@ from typing import Tuple, List
 from .utils import bin_masses_and_intensities
 import csv
 
+
 class SpectrumList:
 
     def __init__(self):
@@ -256,8 +257,11 @@ class SpectrumList:
         else:
             raise ValueError(
                 "It looks like you've already transformed this data.")
-  
-    def to_csv(self, fp: str, sep: str = ",", output_type: str = "metaboanalyst"):
+
+    def to_csv(self,
+               fp: str,
+               sep: str = ",",
+               output_type: str = "metaboanalyst"):
         """
         Method to export the spectrum list.
 
@@ -266,33 +270,34 @@ class SpectrumList:
             sep (str): Seperator to use for file export
             output_type (str): Output type.
         """
+
         def _to_metaboanalyst():
             _output = []
 
             for s in self._list:
                 _samp = np.array([s.identifier, s.stratification])
-                _samp = np.append(_samp, np.array([s.masses, s.intensities]).T)            
-                _samp = _samp.reshape((s.intensities.shape[0]+1, 2))
+                _samp = np.append(_samp, np.array([s.masses, s.intensities]).T)
+                _samp = _samp.reshape((s.intensities.shape[0] + 1, 2))
 
                 _output.append(_samp)
             _output = np.array(_output)
 
             _output = np.hstack(_output)
             np.savetxt(fp, _output, delimiter=sep, fmt="%s")
-        
+
         def _to_matrix():
-            _output = np.ndarray((len(self._list[0].masses)+1, len(self._list)+1), dtype=object)       
-            
+            _output = np.ndarray(
+                (len(self._list[0].masses) + 1, len(self._list) + 1),
+                dtype=object)
 
             _output[0][0] = "Sample ID"
             _output[0][1:] = self._list[0].masses
 
             for index, s in enumerate(self._list):
-                _output[index+1][0] = s.identifier
-                _output[index+1][1:] = s.intensities
-            
-            np.savetxt(fp, _output, delimiter=sep, fmt="%s")
+                _output[index + 1][0] = s.identifier
+                _output[index + 1][1:] = s.intensities
 
+            np.savetxt(fp, _output, delimiter=sep, fmt="%s")
 
         if output_type == "metaboanalyst":
             _to_metaboanalyst()
@@ -303,4 +308,3 @@ class SpectrumList:
                 raise ValueError("SpectrumList must be Value Imputated first!")
         else:
             raise ValueError("%s not a valid output type" % (output_type))
-
