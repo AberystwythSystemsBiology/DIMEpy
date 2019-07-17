@@ -144,8 +144,8 @@ Once completed, you are now free to export the data to a data matrix:
 
 This should give you something akin to:
 
-| Sample ID | M0 | M1 | M2 | .. |
-:-----------|----|----|----| .. |
+| Sample ID | M0 | M1 | M2 | ... |
+|-----------|----|----|----|-----|
 
 
 ### I still don't get it, can I see some examples please?
