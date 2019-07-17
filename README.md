@@ -15,18 +15,11 @@ This is very much an implementation and extension of the  of the methods detaile
 - Spurious peak elimination.
 - Spectrum export for direct dissemination using Metaboanalyst.
 - Spectral binning.
+- Value imputation.
 - Spectral normalisation.
-  - TIC
-  - Median
-  - Mean
+  - including TIC, median, mean...
 - Spectral transformation.
-  - log10
-  - cube
-  - nlog
-  - log2
-  - glog
-  - sqrt
-  - ihs
+  - including log10, cube, nlog, log2, glog, sqrt, ihs...
 
 ## Usage
 
