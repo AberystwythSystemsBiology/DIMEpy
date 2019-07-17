@@ -5,7 +5,7 @@
 
 Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from mzML files.
 
-This is very much an implementation and extension of the  of the methods detailed in High-throughput, nontargeted metabolite fingerprinting using nominal mass flow injection electrospray mass spectrometry (Beckmann, et al, 2008).
+This is very much an implementation and extension of the  of the methods detailed in [High-throughput, nontargeted metabolite fingerprinting using nominal mass flow injection electrospray mass spectrometry (Beckmann, et al, 2008)](https://www.nature.com/articles/nprot.2007.500).
 
 ## Features
 
@@ -21,12 +21,6 @@ This is very much an implementation and extension of the  of the methods detaile
 - Spectral transformation.
   - including log10, cube, nlog, log2, glog, sqrt, ihs...
 - Export to array for statistical analysis in Metaboanalyst.
-
-## Usage
-
-```python
-# This will be rewritten shortly.
-```
 
 ## Installation
 
@@ -44,9 +38,19 @@ If you want the 'bleeding edge' version this, you can also install directly from
 pip install git+https://www.github.com/AberystwythSystemsBiology/DIMEpy
 ```
 
-## Bug reporting
+## Usage
 
-Please report all bugs you find in the issues tracker, please do not email me directly as I'm struggling to keep track of what needs to be fixed. We welcome all sorts of contribution, so please be as candid as you want.
+
+
+```python
+# This will be rewritten shortly.
+```
+
+## Bug reporting and feature suggestions
+
+Please report all bugs or feature suggestions to the [issues tracker](https://github.com/AberystwythSystemsBiology/DIMEpy/issues). **Please do not email me directly** as I'm struggling to keep track of what needs to be fixed. 
+
+We welcome all sorts of contribution, so please be as candid as you want(!)
 
 ## Contributors
 
@@ -57,4 +61,4 @@ Please report all bugs you find in the issues tracker, please do not email me di
 
 ## License
 
-DIMEpy is licensed under the GNU General Public License v2.0.
+DIMEpy is licensed under the [GNU General Public License v2.0](https://raw.githubusercontent.com/AberystwythSystemsBiology/DIMEpy/master/LICENSE).
