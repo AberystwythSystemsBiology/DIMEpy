@@ -44,14 +44,6 @@ pip install dimepy
 If you want the 'bleeding edge' version this, you can also install directly from this repository using ```git```:
 
 ```
-git clone https://www.github.com/AberystwythSystemsBiology/DIMEpy
-cd DIMEpy
-python setup.py install
-```
-
-Or use ```git``` and ```pip``` in unison:
-
-```
 pip install git+https://www.github.com/AberystwythSystemsBiology/DIMEpy
 ```
 
