@@ -55,7 +55,27 @@ If you are only going to load in a single file for fingerprint matrix estimation
 >>> spec = Spectrum(filepath, identifier="example", stratification="class_one")
 ```
 
-If your experimental protocol makes use of mixed-polarity scanning, then please ensure that you  
+If your experimental protocol makes use of mixed-polarity scanning, then please ensure that you limit the scan ranges to best match what polarity you're interested in analysing:
+
+```python
+>>> spec.limit_polarity("negative")
+```
+
+If you are using FIE-MS, then it is strongly recommended that you use just the infusion profile to generate your mass spectrum. For example, if your scan profiles look like this:
+
+```
+        |        _
+      T |       / \
+      I |      /   \_
+      C |_____/       \_________________
+        0     0.5     1     1.5     2 [min]
+```
+
+Then it is fair to assume that the infusion occured during the scans ranging from 30 seconds to 1 minute. The ```limit_infusion()``` method does this by estimating the mean absolute deviation (MAD) of total ion counts before limiting the profile to the range between the time range in which whatever multiple of MAD has been estimated.
+
+```python
+>>> spec.limit_infusion(2) # 2 times the MAD.
+```
 
 ## Bug reporting and feature suggestions
 
