@@ -257,7 +257,7 @@ class SpectrumList:
                 raise ValueError("%s is not a valid normalisation method" %
                                  (method))
 
-        if self.normalised:
+        if not self.normalised:
             for spec in self._list:
                 _normie(spec)
 
@@ -293,7 +293,7 @@ class SpectrumList:
             elif method.upper() == "IHS":
                 spec._intensities = np.array([math.asinh(x) for x in i])
 
-        if self.transformed:
+        if not self.transformed:
             for spec in self._list:
                 _transform(spec)
             self.transformed = True
