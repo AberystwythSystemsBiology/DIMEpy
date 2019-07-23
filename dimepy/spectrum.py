@@ -103,13 +103,14 @@ class Spectrum:
         deviation to determine when the infusion has taken place.
 
         Infusion Profile (Sketch):
-
-               _
-              / \
-             /   \_
-        ____/       \_________________
-        0     0.5     1     1.5     2 [min]
-            |--------| Apex
+        ::
+                 _
+                / \ 
+               /   \_
+          ____/       \_________________
+          0     0.5     1     1.5     2 [min]
+              |--------| Apex
+        
 
         
         Arguments:
