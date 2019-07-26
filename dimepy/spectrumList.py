@@ -26,6 +26,7 @@ import itertools
 import zipfile
 from io import StringIO
 
+
 class SpectrumList:
 
     def __init__(self):
@@ -303,10 +304,7 @@ class SpectrumList:
             raise ValueError(
                 "It looks like you've already transformed this data.")
 
-    def to_csv(self,
-               fp: str,
-               sep: str = ",",
-               output_type: str = "base"):
+    def to_csv(self, fp: str, sep: str = ",", output_type: str = "base"):
         """
         Method to export the spectrum list.
 
@@ -329,13 +327,15 @@ class SpectrumList:
 
             with open(fp, "w") as outfile:
                 writer = csv.writer(outfile, delimiter=sep)
-                for line in itertools.zip_longest(*_output, fillvalue=np.array([None, None])):
+                for line in itertools.zip_longest(*_output,
+                                                  fillvalue=np.array(
+                                                      [None, None])):
                     writer.writerow(np.concatenate(line, axis=0))
 
             outfile.close()
 
         def _to_metaboanalyst():
-            
+
             zf = zipfile.ZipFile(fp, "w", zipfile.ZIP_DEFLATED)
 
             for s in self._list:
@@ -350,11 +350,10 @@ class SpectrumList:
                 for line in _samp:
                     writer.writerow(line)
 
-                zf.writestr("%s/%s.csv" % (s.stratification, s.identifier), buffer.getvalue())
-
+                zf.writestr("%s/%s.csv" % (s.stratification, s.identifier),
+                            buffer.getvalue())
 
             zf.close()
-
 
         def _to_matrix():
             _output = np.ndarray(
@@ -369,7 +368,7 @@ class SpectrumList:
                 _output[index + 1][1:] = s.intensities
 
             np.savetxt(fp, _output, delimiter=sep, fmt="%s")
-        
+
         if output_type == "base":
             _to_base()
         elif output_type == "metaboanalyst":
