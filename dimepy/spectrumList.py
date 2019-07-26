@@ -22,6 +22,7 @@ import math
 from typing import Tuple, List
 from .utils import bin_masses_and_intensities
 import csv
+import itertools
 
 
 class SpectrumList:
@@ -323,11 +324,16 @@ class SpectrumList:
                 _samp = _samp.reshape((s.intensities.shape[0] + 1, 2))
 
                 _output.append(_samp)
-            _output = np.array(_output)
+            _output = np.array(_output).T
 
-            _output = np.hstack(_output)
-            np.savetxt(fp, _output, delimiter=sep, fmt="%s")
+            with open(fp, "w") as outfile:
+                writer = csv.writer(outfile, delimiter=sep)
+                for line in itertools.zip_longest(*_output, fillvalue=np.array([None, None])):
+                    writer.writerow(np.concatenate(line, axis=0))
 
+            outfile.close()
+
+            
         def _to_matrix():
             _output = np.ndarray(
                 (len(self._list[0].masses) + 1, len(self._list) + 1),

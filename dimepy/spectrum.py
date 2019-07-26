@@ -96,7 +96,7 @@ class Spectrum:
             if _determine_polarity(scan) != polarity.upper():
                 self._to_use[index] = False
 
-    def limit_infusion(self, mad_multiplyer: int = 1) -> None:
+    def limit_infusion(self, threshold: int = 3) -> None:
         """
         This method is a slight extension of the work by Manfred Beckmann
         (meb@aber.ac.uk) in FIEMSpro in which we use the mean absolute
@@ -114,19 +114,35 @@ class Spectrum:
 
         
         Arguments:
-            mad_multiplier (int): The multiplier for the mean absolute
+            mad_multiplier (int): The multiplier for the median absolute
             deviation method to take the infusion profile from.
         
         """
-        tics = np.array([scan.TIC for scan in self._scans])
-        mad = np.mean(np.absolute(np.array(tics) - np.mean(tics)))
 
-        apex_index = tics >= mad * mad_multiplyer
+        def _calculate_mad(tics: np.array) -> float:
+            return np.median(np.abs(tics - np.median(tics)))
 
-        sel = np.where(self._to_use == True)[0]
+        def _get_mask(tics: np.array, mad: float) -> np.array:
+            tics = tics[:, None]
+            median = np.median(tics, axis=0)
+            diff = np.sum((tics - median)**2, axis=-1)
+            diff = np.sqrt(diff)
 
-        for indx, sel in enumerate(sel):
-            self._to_use[sel] = apex_index[indx]
+            med_abs_deviation = np.median(diff)
+
+            modified_z_score = 0.6745 * diff / med_abs_deviation
+
+            return modified_z_score >= threshold
+
+        tics = np.array([scan.TIC for scan in self._scans[self._to_use]])
+        mad = _calculate_mad(tics)
+
+        apex_index = _get_mask(tics, mad)
+
+        to_use = np.where(self._to_use == True)[0]
+
+        for i, j in enumerate(to_use):
+            self._to_use[j] = apex_index[i]
 
     def reset(self) -> None:
         """
