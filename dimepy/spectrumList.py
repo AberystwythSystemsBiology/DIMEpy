@@ -23,6 +23,7 @@ from typing import Tuple, List
 from .utils import bin_masses_and_intensities
 import csv
 import itertools
+import zipfile
 
 
 class SpectrumList:
@@ -305,7 +306,7 @@ class SpectrumList:
     def to_csv(self,
                fp: str,
                sep: str = ",",
-               output_type: str = "metaboanalyst"):
+               output_type: str = "base"):
         """
         Method to export the spectrum list.
 
@@ -315,11 +316,11 @@ class SpectrumList:
             output_type (str): Output type.
         """
 
-        def _to_metaboanalyst():
+        def _to_base():
             _output = []
 
             for s in self._list:
-                _samp = np.array([s.identifier, s.stratification])
+                _samp = np.array([s.stratification, s.identifier])
                 _samp = np.append(_samp, np.array([s.masses, s.intensities]).T)
                 _samp = _samp.reshape((s.intensities.shape[0] + 1, 2))
 
@@ -333,7 +334,10 @@ class SpectrumList:
 
             outfile.close()
 
-            
+        def _to_metaboanalyst():
+            pass
+
+
         def _to_matrix():
             _output = np.ndarray(
                 (len(self._list[0].masses) + 1, len(self._list) + 1),
@@ -347,8 +351,10 @@ class SpectrumList:
                 _output[index + 1][1:] = s.intensities
 
             np.savetxt(fp, _output, delimiter=sep, fmt="%s")
-
-        if output_type == "metaboanalyst":
+        
+        if output_type == "base":
+            _to_base()
+        elif output_type == "metaboanalyst":
             _to_metaboanalyst()
         elif output_type == "matrix":
             if self.value_imputated:
