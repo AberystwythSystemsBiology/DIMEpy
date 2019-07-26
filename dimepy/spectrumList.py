@@ -24,7 +24,7 @@ from .utils import bin_masses_and_intensities
 import csv
 import itertools
 import zipfile
-
+from io import StringIO
 
 class SpectrumList:
 
@@ -335,7 +335,25 @@ class SpectrumList:
             outfile.close()
 
         def _to_metaboanalyst():
-            pass
+            
+            zf = zipfile.ZipFile(fp, "w", zipfile.ZIP_DEFLATED)
+
+            for s in self._list:
+                _samp = np.array(["mz", "into"])
+                _samp = np.append(_samp, np.array([s.masses, s.intensities]).T)
+                _samp = _samp.reshape((s.intensities.shape[0] + 1, 2))
+
+                buffer = StringIO()
+
+                writer = csv.writer(buffer)
+
+                for line in _samp:
+                    writer.writerow(line)
+
+                zf.writestr("%s/%s.csv" % (s.stratification, s.identifier), buffer.getvalue())
+
+
+            zf.close()
 
 
         def _to_matrix():
