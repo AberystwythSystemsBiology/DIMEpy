@@ -83,7 +83,7 @@ If you are using FIE-MS it is strongly recommended that you use just the infusio
         0     0.5     1     1.5     2 [min]
 ```
 
-Then it is fair to assume that the infusion occured during the scans ranging from 30 seconds to 1 minute. The ```limit_infusion()``` method does this by estimating the mean absolute deviation (MAD) of total ion counts (TIC) before limiting the profile to the range between the time range in which whatever multiple of MAD has been estimated:
+Then it is fair to assume that the infusion occured during the scans ranging from 30 seconds to 1 minute. The ```limit_infusion()``` method does this by estimating the median absolute deviation (MAD) of total ion counts (TIC) before limiting the profile to the range between the time range in which whatever multiple of MAD has been estimated:
 
 ```python
 >>> spec.limit_infusion(2) # 2 times the MAD.

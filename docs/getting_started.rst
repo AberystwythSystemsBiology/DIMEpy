@@ -52,8 +52,8 @@ scan profiles look like this:
 
 Then it is fair to assume that the infusion occured during the scans
 ranging from 30 seconds to 1 minute. The ``limit_infusion()`` method
-does this by estimating the mean absolute deviation (MAD) of total ion
-counts (TIC) before limiting the profile to the range between the time
+does this by estimating the median absolute deviation (MAD) of total ion
+count (TIC) before limiting the profile to the range between the time
 range in which whatever multiple of MAD has been estimated:
 
 .. code:: python
