@@ -176,7 +176,7 @@ class Spectrum:
         """
         scans = []
 
-        for scan in self._scans[self.to_use]:
+        for scan in self._scans[self._to_use]:
             scan = Scan(scan, snr_estimator=self.snr_estimator, peak_type=self.peak_type)
             scans.append(scan)
 
