@@ -61,6 +61,7 @@ class Spectrum:
         self._scans, self._to_use = self._base_load()
 
     def _base_load(self) -> Tuple[np.array, np.array]:
+
         extraAccessions = [
             [[y, ["value"]] for y in terms[x]] for x in terms.keys()
         ]
@@ -105,11 +106,12 @@ class Spectrum:
 
     def limit_infusion(self, threshold: int = 3) -> None:
         """
-        This method is a slight extension of Manfred Beckmann's
-        (meb@aber.ac.uk) FIEMSpro in which we use the median absolute
-        deviation to determine when the infusion has  place.
+        This method is a slight extension of Manfred Beckmann's (meb@aber.ac.uk)
+        LCT/Q-ToF scan retrieval method in FIEMSpro in which we use the median absolute
+        deviation of all TICs within a Spectrum to determine when
+        the infusion has taken place.
 
-        Infusion Profile (Sketch):
+        Consider the following Infusion Profile:
         ::
                  _
                 / \ 
@@ -118,7 +120,8 @@ class Spectrum:
           0     0.5     1     1.5     2 [min]
               |--------| Apex
         
-
+        We are only interested in the scans in which the infusion takes place
+        (20 - 50 seconds).
         
         Arguments:
             mad_multiplier (int): The multiplier for the median absolute
@@ -162,14 +165,13 @@ class Spectrum:
 
     def load_scans(self) -> None:
         """
-        This method loads the scans
-
-        Note: 
+        This method loads the scans in accordance to whatever Scans are
+        set to True in the to_use list.
 
         """
         scans = []
 
-        for scan in self._scans[self._to_use]:
+        for scan in self._scans[self.to_use]:
             scan = Scan(scan, snr_estimator=self.snr_estimator)
             scans.append(scan)
 
@@ -201,6 +203,7 @@ class Spectrum:
         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
             statistic (str): The statistic to use to calculate bin values.
+
         """
         self._masses, self._intensities = bin_masses_and_intensities(
             self.masses, self.intensities, bin_width, statistic)
@@ -316,6 +319,10 @@ class Spectrum:
             return self._intensities
         else:
             raise ValueError("No intensities generated, run Spectrum.get first")
+
+    @property
+    def to_use(self) -> List[bool]:
+        return self._to_use
 
     @property
     def mass_range(self) -> Tuple[float, float]:
