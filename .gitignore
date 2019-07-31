@@ -165,8 +165,5 @@ test.p*
 .history
 
 
-test/
-test*
-
 .vscode/settings.json
 
