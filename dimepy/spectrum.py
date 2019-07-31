@@ -1,3 +1,14 @@
+# -*- coding: utf-8 -*-
+# encoding: utf-8
+
+import numpy as np
+from typing import Tuple, List
+from scipy.stats import binned_statistic
+from pymzml.run import Reader as pymzmlReader
+from .scan import Scan
+from .utils import terms, bin_masses_and_intensities
+import itertools
+
 # Copyright (c) 2017-2019 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
@@ -13,16 +24,7 @@
 # You should have received a copy of the GNU General Public
 # License along with this program; if not, write to the
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-# Boston, MA 02110-1301 USAtmimport itertools
-import numpy as np
-from typing import Tuple, List
-
-from scipy.stats import binned_statistic
-from pymzml.run import Reader as pymzmlReader
-
-from .scan import Scan
-from .utils import terms, bin_masses_and_intensities
-
+# Boston, MA 02110-1301 USA
 
 class Spectrum:
 
@@ -41,6 +43,10 @@ class Spectrum:
             injection_order (int): The injection number of the Spectrum object.
             stratification (str): Class label of the Spectrum object)
             snr_estimator (str): Signal to noise method used to filter.
+                Currently supported signal-to-noise estimation methods are:
+                    * 'median' (default)
+                    * 'mean'
+                    * 'mad'
         """
         self.filepath = filepath
         self.identifier = identifier
@@ -76,10 +82,13 @@ class Spectrum:
     def limit_polarity(self, polarity: str) -> None:
         """
         Limit the Scans found within the mzML file to whatever polarity is given.
-        This is quite useful for those of us that are using mixed polarity experiments.
+        This should only be called where fast-polarity switching is used.
 
         Arguments:
-            polarity (string): polarity type of the scans required (positive/negative)
+            polarity (str): polarity type of the scans required
+                Supported polarity types are :
+                    * 'positive'
+                    * 'negative'
         """
 
         def _determine_polarity(scan) -> str:
@@ -96,9 +105,9 @@ class Spectrum:
 
     def limit_infusion(self, threshold: int = 3) -> None:
         """
-        This method is a slight extension of the work by Manfred Beckmann
-        (meb@aber.ac.uk) in FIEMSpro in which we use the mean absolute
-        deviation to determine when the infusion has taken place.
+        This method is a slight extension of Manfred Beckmann's
+        (meb@aber.ac.uk) FIEMSpro in which we use the median absolute
+        deviation to determine when the infusion has  place.
 
         Infusion Profile (Sketch):
         ::
@@ -113,7 +122,7 @@ class Spectrum:
         
         Arguments:
             mad_multiplier (int): The multiplier for the median absolute
-            deviation method to take the infusion profile from.
+                deviation method to take the infusion profile from.
         
         """
 
@@ -144,7 +153,7 @@ class Spectrum:
 
     def reset(self) -> None:
         """
-        A method to reset the Spectrum object completely.        
+        A method to reset the Spectrum object in its entirety.
         """
         self._to_use = self._to_use == False
         self._masses = False
@@ -153,12 +162,10 @@ class Spectrum:
 
     def load_scans(self) -> None:
         """
-        A method to load the scans in.
+        This method loads the scans
 
         Note: 
-            If you are using mixed polarity methods, or only require the
-            infusion profile - please ensure you run limit_infusion and
-            limit_profile.
+
         """
         scans = []
 

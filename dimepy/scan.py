@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# encoding: utf-8
+
+import numpy as np
+from .utils import bin_masses_and_intensities, terms
+from typing import Tuple
+
 # Copyright (c) 2017-2019 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
@@ -15,10 +22,6 @@
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
-import numpy as np
-from .utils import bin_masses_and_intensities, terms
-from typing import Tuple
-
 class Scan:
 
     def __init__(self,
@@ -27,6 +30,10 @@ class Scan:
                  peak_type: str = "raw"):
         """
             Initalise a Scan object for a given pymzML Spectrum.
+
+            Usage:
+
+
 
             Arguments:
                 pymzml_spectrum (pymzml.Spectrum): Spectrum object.

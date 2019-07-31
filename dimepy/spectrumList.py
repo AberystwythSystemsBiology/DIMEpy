@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+# encoding: utf-8
+
+import numpy as np
+from scipy.stats import binned_statistic
+from .spectrum import Spectrum
+import math
+from typing import Tuple
+import csv
+import itertools
+import zipfile
+from io import StringIO
+
 # Copyright (c) 2017-2019 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
@@ -14,18 +27,6 @@
 # License along with this program; if not, write to the
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
-
-import numpy as np
-from scipy.stats import binned_statistic
-from .spectrum import Spectrum
-import math
-from typing import Tuple, List
-from .utils import bin_masses_and_intensities
-import csv
-import itertools
-import zipfile
-from io import StringIO
-
 
 class SpectrumList:
 
