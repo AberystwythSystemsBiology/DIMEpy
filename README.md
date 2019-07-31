@@ -184,4 +184,4 @@ Documentation for the project can be found on its [readthedocs page](https://dim
 
 ## License
 
-DIMEpy is licensed under the [GNU General Public License v2.0](https://raw.githubusercontent.com/AberystwythSystemsBiology/DIMEpy/master/LICENSE).
+DIMEpy is licensed under the [GNU General Public License v3.0](https://raw.githubusercontent.com/AberystwythSystemsBiology/DIMEpy/master/LICENSE).

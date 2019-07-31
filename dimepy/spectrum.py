@@ -34,7 +34,10 @@ class Spectrum:
                  injection_order: int = None,
                  stratification: str = None,
                  snr_estimator: str = False,
-                 peak_type: str = "raw"):
+                 peak_type: str = "raw",
+                 MS1_precision: float = 5e-6,
+                 MSn_precision: float = 20e-6
+                 ):
         """
         Initialise Spectrum object for a given mzML file.
 
@@ -49,6 +52,8 @@ class Spectrum:
                     * 'mean'
                     * 'mad'
             peak_type (raw): Something here.
+            MS1_precision (float): Something here.
+            MSn_precision (float): Something here.
         """
         self.filepath = filepath
         self.identifier = identifier
@@ -56,6 +61,8 @@ class Spectrum:
         self.stratification = stratification
         self.snr_estimator = snr_estimator
         self.peak_type = peak_type
+        self.MS1_precision = MS1_precision
+        self.MSn_precision = MSn_precision
 
         self.read_scans = []
         self._masses = False
@@ -72,7 +79,12 @@ class Spectrum:
         # Flatten the list of lists of lists into a list of lists.
         extraAccessions = list(itertools.chain.from_iterable(extraAccessions))
 
-        reader = pymzmlReader(self.filepath, extraAccessions=extraAccessions)
+        reader = pymzmlReader(
+            self.filepath,
+            extraAccessions=extraAccessions,
+            MS1_Precision = self.MS1_precision,
+            MSn_Precision = self.MSn_precision
+        )
 
         scans = []
         to_use = []
