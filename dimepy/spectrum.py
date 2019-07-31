@@ -33,7 +33,8 @@ class Spectrum:
                  identifier: str,
                  injection_order: int = None,
                  stratification: str = None,
-                 snr_estimator: str = False):
+                 snr_estimator: str = False,
+                 peak_type: str = "raw"):
         """
         Initialise Spectrum object for a given mzML file.
 
@@ -47,12 +48,14 @@ class Spectrum:
                     * 'median' (default)
                     * 'mean'
                     * 'mad'
+            peak_type (raw): Something here.
         """
         self.filepath = filepath
         self.identifier = identifier
         self.injection_order = injection_order
         self.stratification = stratification
         self.snr_estimator = snr_estimator
+        self.peak_type = peak_type
 
         self.read_scans = []
         self._masses = False
@@ -174,7 +177,7 @@ class Spectrum:
         scans = []
 
         for scan in self._scans[self.to_use]:
-            scan = Scan(scan, snr_estimator=self.snr_estimator)
+            scan = Scan(scan, snr_estimator=self.snr_estimator, peak_type=self.peak_type)
             scans.append(scan)
 
         self.read_scans = scans
