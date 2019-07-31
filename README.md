@@ -173,7 +173,6 @@ We welcome all sorts of contribution, so please be as candid as you want(!)
 
 Documentation for the project can be found on its [readthedocs page](https://dimepy.readthedocs.io/en/latest/).
 
-
 ## Contributors
 
 * **Lead Developer:** Keiron O'Shea (keo7@aber.ac.uk)
