@@ -87,7 +87,7 @@ class Spectrum:
 
         Arguments:
             polarity (str): polarity type of the scans required
-                Supported polarity types are :
+                Supported polarity types are:
                     * 'positive'
                     * 'negative'
         """
@@ -205,7 +205,21 @@ class Spectrum:
         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
             statistic (str): The statistic to use to calculate bin values.
-
+                Supported statistic types are:
+                    * 'mean' (default): compute the mean of intensities for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'std': compute the standard deviation within each bin. This is
+                        implicitly calculated with ddof=0.
+                    * 'median': compute the median of values for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'count': compute the count of points within each bin.
+                        This is identical to an unweighted histogram. values array is not referenced.
+                    * 'sum': compute the sum of values for points within each bin.
+                        This is identical to a weighted histogram.
+                    * 'min': compute the minimum of values for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'max': compute the maximum of values for point within each bin.
+                        Empty bins will be represented by NaN.
         """
         self._masses, self._intensities = bin_masses_and_intensities(
             self.masses, self.intensities, bin_width, statistic)
@@ -218,14 +232,17 @@ class Spectrum:
         Method that's highly influenced by Jasen Finch's (jsf9@aber.ac.uk)
         binneR, in which spurios peaks can be removed. At the time of writing,
         this method has serious performance issues and needs to be rectified.
+        but should still work as intended (provided that you don't mind how long
+        it takes to complete)
 
         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
             threshold (float): Percentage of scans in which a peak must be in
-            in order for it to be considered.
-            scan_grouping (float): Mass-to-ion scan groups.
-
-
+                in order for it to be considered.
+            scan_grouping (float): Mass-to-ion scan groups, this splits the
+                scans into groups to ease the processing somewhat. It
+                is strongly recommended that you keep this at it's default
+                value of of 50.0
         Note:
             load_scans() must first be run in order for this to work.
 
