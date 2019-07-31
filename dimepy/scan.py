@@ -16,11 +16,8 @@
 # Boston, MA 02110-1301 USA
 
 import numpy as np
-from scipy.stats import binned_statistic
 from .utils import bin_masses_and_intensities, terms
-import math
 from typing import Tuple
-
 
 class Scan:
 
