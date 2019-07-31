@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# encoding: utf-8
+
+from .spectrum import Spectrum
+from .spectrumList import SpectrumList
+from .scan import Scan
+
 # Copyright (c) 2017-2019 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
@@ -14,7 +21,3 @@
 # License along with this program; if not, write to the
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
-
-from .spectrum import Spectrum
-from .spectrumList import SpectrumList
-from .scan import Scan
