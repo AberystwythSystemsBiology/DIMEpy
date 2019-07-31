@@ -168,6 +168,8 @@ class Spectrum:
         This method loads the scans in accordance to whatever Scans are
         set to True in the to_use list.
 
+        Note: If you want to actually make use of masses and intensities
+            (you probably do), then ensure that you call this method.
         """
         scans = []
 
@@ -311,14 +313,14 @@ class Spectrum:
         if type(self._masses) != bool:
             return self._masses
         else:
-            raise ValueError("No masses generated, run Spectrum.get first.")
+            raise ValueError("No masses generated, run load_scans() first!")
 
     @property
     def intensities(self) -> np.array:
         if type(self._intensities) != bool:
             return self._intensities
         else:
-            raise ValueError("No intensities generated, run Spectrum.get first")
+            raise ValueError("No intensities generated, run load_scans() first!")
 
     @property
     def to_use(self) -> List[bool]:
