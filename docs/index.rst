@@ -6,12 +6,7 @@
 Welcome to DIMEpy's documentation!
 ==================================
 
-
-`Project Status: Active - The project has reached a stable, usable state
-and is being actively developed. <http://www.repostatus.org/#active>`__
 |PyPI - Python Version| |PyPI| |PyPI - License| |DOI| |PyPI - Status|
-`Documentation
-Status <https://dimepy.readthedocs.io/en/latest/?badge=latest>`__
 
 Python package for the high-throughput nontargeted metabolite
 fingerprinting of nominal mass direct injection mass spectrometry
@@ -58,7 +53,7 @@ License
 -------
 
 DIMEpy is licensed under the `GNU General Public License
-v2.0 <https://raw.githubusercontent.com/AberystwythSystemsBiology/DIMEpy/master/LICENSE>`__.
+v3.0 <https://raw.githubusercontent.com/AberystwythSystemsBiology/DIMEpy/master/LICENSE>`__.
 
 .. |PyPI - Python Version| image:: https://img.shields.io/pypi/pyversions/DIMEpy.svg
 .. |PyPI| image:: https://img.shields.io/pypi/v/DIMEpy.svg

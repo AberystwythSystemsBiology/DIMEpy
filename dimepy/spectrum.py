@@ -51,9 +51,13 @@ class Spectrum:
                     * 'median' (default)
                     * 'mean'
                     * 'mad'
-            peak_type (raw): Something here.
-            MS1_precision (float): Something here.
-            MSn_precision (float): Something here.
+            peak_type (raw): What peak type to load in.
+                Currently support peak types are:
+                    * 'raw' (default)
+                    * centroided
+                    * reprofiled
+            MS1_precision (float): Measured precision for the MS level 1.
+            MSn_precision (float): Measured precision for the MS level n.
         """
         self.filepath = filepath
         self.identifier = identifier
@@ -136,7 +140,8 @@ class Spectrum:
               |--------| Apex
         
         We are only interested in the scans in which the infusion takes place
-        (20 - 50 seconds).
+        (20 - 50 seconds). Applying this method changes the to_use values to only
+        be True where the TIC is >= TIC * mad_multiplier.
         
         Arguments:
             mad_multiplier (int): The multiplier for the median absolute
