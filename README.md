@@ -6,9 +6,9 @@
 ![PyPI - License](https://img.shields.io/pypi/l/DIMEpy.svg)
 ![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3340120.svg)
 ![PyPI - Status](https://img.shields.io/pypi/status/DIMEpy.svg)
-![GitHub commit activity](https://img.shields.io/github/commit-activity/y/KeironO/DIMEpy.svg)
+[![Documentation Status](https://readthedocs.org/projects/dimepy/badge/?version=latest)](https://dimepy.readthedocs.io/en/latest/?badge=latest)
 
-Python package for the high-thoroughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from mzML files.
+Python package for the high-throughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from mzML files.
 
 This work is very much inspired by the methods detailed in [High-throughput, nontargeted metabolite fingerprinting using nominal mass flow injection electrospray mass spectrometry (Beckmann, et al, 2008)](https://www.nature.com/articles/nprot.2007.500). 
 
@@ -169,9 +169,15 @@ Please report all bugs or feature suggestions to the [issues tracker](https://gi
 
 We welcome all sorts of contribution, so please be as candid as you want(!)
 
+## Documentation
+
+Documentation for the project can be found on its [readthedocs page](https://dimepy.readthedocs.io/en/latest/).
+
+
 ## Contributors
 
 * **Lead Developer:** Keiron O'Shea (keo7@aber.ac.uk)
+* **Developer:** Rob Bolton (rab26@aber.ac.uk)
 * **Project Supervisor:** Chuan Lu (cul@aber.ac.uk)
 * **Project Supervisor:** Luis AJ Mur (lum@aber.ac.uk)
 * **Methods Expert:** Manfred Beckmann (meb@aber.ac.uk)
