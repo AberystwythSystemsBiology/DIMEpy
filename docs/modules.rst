@@ -3,7 +3,6 @@ Modules
 
 dimepy.scan
 -----------
-TODO: Summary
 
 .. automodule:: dimepy.scan
    :members:
@@ -15,7 +14,6 @@ TODO: Summary
 
 dimepy.spectrum
 ---------------
-TODO: Summary
 
 .. automodule:: dimepy.spectrum
    :members:
@@ -27,7 +25,6 @@ TODO: Summary
 
 dimepy.spectrumList
 -------------------
-TODO: Summary
 
 .. automodule:: dimepy.spectrumList
    :members:
