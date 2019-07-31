@@ -42,7 +42,7 @@ class Spectrum:
             filepath (str): Path to the mzML file to parse.
             identifier (str): Unique identifier for the Spectrum object.
             injection_order (int): The injection number of the Spectrum object.
-            stratification (str): Class label of the Spectrum object)
+            stratification (str): Class label of the Spectrum object.
             snr_estimator (str): Signal to noise method used to filter.
                 Currently supported signal-to-noise estimation methods are:
                     * 'median' (default)
