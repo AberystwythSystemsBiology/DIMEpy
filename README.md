@@ -7,6 +7,7 @@
 ![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3340120.svg)
 ![PyPI - Status](https://img.shields.io/pypi/status/DIMEpy.svg)
 [![Documentation Status](https://readthedocs.org/projects/dimepy/badge/?version=latest)](https://dimepy.readthedocs.io/en/latest/?badge=latest)
+[![Downloads](https://pepy.tech/badge/dimepy)](https://pepy.tech/project/dimepy)
 
 Python package for the high-throughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from mzML files.
 
