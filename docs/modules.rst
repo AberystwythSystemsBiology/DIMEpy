@@ -1,39 +1,23 @@
+.. default-domain:: py
+
 Modules
 =======
 
-.. default-domain:: py
-
-dimepy.Scan
------------
-
-   .. autoclass:: dimepy.Scan
-      :members:
-
-      .. automethod:: __init__
-
 dimepy.Spectrum
 ---------------
-
 .. automodule:: dimepy.spectrum
-   :members:
 
-   .. autoclass:: Spectrum
-      :members:
+.. autoclass:: dimepy.spectrum.Spectrum
+    :members:
 
-      .. automethod:: __init__
 
 dimepy.SpectrumList
 -------------------
-
-.. automodule:: dimepy.spectrumList
+.. autoclass:: dimepy.SpectrumList
    :members:
 
-   .. autoclass:: SpectrumList
-      :members:
 
-.. automodule:: dimepy.utils
-   :members:
-
-   .. automethod:: bin_masses_and_intensities
-
-
+dimepy.Scan
+-----------
+.. autoclass:: dimepy.Scan
+    :members:

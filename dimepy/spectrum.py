@@ -1,6 +1,12 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
+"""
+The class :py:class:`Spectrum` has been designed to load data
+from a mzML file and to represetn the data as a python object.
 
+Note:
+    This class is still being actively developed and will likely change over time.
+"""
 import numpy as np
 from typing import Tuple, List
 from scipy.stats import binned_statistic
@@ -26,8 +32,28 @@ import itertools
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
-class Spectrum:
+class Spectrum(object):
+    """
+    Initialise Spectrum object for a given mzML file.
 
+    Arguments:
+        filepath (str): Path to the mzML file to parse.
+        identifier (str): Unique identifier for the Spectrum object.
+        injection_order (int): The injection number of the Spectrum object.
+        stratification (str): Class label of the Spectrum object.
+        snr_estimator (str): Signal to noise method used to filter.
+            Currently supported signal-to-noise estimation methods are:
+                * 'median' (default)
+                * 'mean'
+                * 'mad'
+        peak_type (raw): What peak type to load in.
+            Currently support peak types are:
+                * 'raw' (default)
+                * centroided
+                * reprofiled
+        MS1_precision (float): Measured precision for the MS level 1.
+        MSn_precision (float): Measured precision for the MS level n.
+    """
     def __init__(self,
                  filepath: str,
                  identifier: str,
@@ -38,27 +64,7 @@ class Spectrum:
                  MS1_precision: float = 5e-6,
                  MSn_precision: float = 20e-6
                  ):
-        """
-        Initialise Spectrum object for a given mzML file.
 
-        Arguments:
-            filepath (str): Path to the mzML file to parse.
-            identifier (str): Unique identifier for the Spectrum object.
-            injection_order (int): The injection number of the Spectrum object.
-            stratification (str): Class label of the Spectrum object.
-            snr_estimator (str): Signal to noise method used to filter.
-                Currently supported signal-to-noise estimation methods are:
-                    * 'median' (default)
-                    * 'mean'
-                    * 'mad'
-            peak_type (raw): What peak type to load in.
-                Currently support peak types are:
-                    * 'raw' (default)
-                    * centroided
-                    * reprofiled
-            MS1_precision (float): Measured precision for the MS level 1.
-            MSn_precision (float): Measured precision for the MS level n.
-        """
         self.filepath = filepath
         self.identifier = identifier
         self.injection_order = injection_order
