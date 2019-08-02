@@ -65,5 +65,12 @@ class SpectrumTest(unittest.TestCase):
         spectrum.limit_infusion(1)
 
         self.assertTrue(np.array_equal(spectrum.to_use, np.array([False, True, True, False, False, False, False])))
+
+    def test_reset(self):
+        pass
+
+    def test_limit_spurious_peaks(self):
+        pass
+
 if __name__ == '__main__':
     unittest.main()
