@@ -67,10 +67,26 @@ class SpectrumTest(unittest.TestCase):
         self.assertTrue(np.array_equal(spectrum.to_use, np.array([False, True, True, False, False, False, False])))
 
     def test_reset(self):
-        pass
+        spectrum = Spectrum(mzml_fp, "test")
+        spectrum.limit_polarity("negative")
+        spectrum.load_scans()
+
+        spectrum.reset()
+
+        self.assertFalse(False in spectrum.to_use)
 
     def test_limit_spurious_peaks(self):
-        pass
+        # Dumb test, needs rewriting
+
+        spectrum = Spectrum(mzml_fp, "test")
+        spectrum.limit_polarity("positive")
+        spectrum.load_scans()
+
+        m_l = len(spectrum.masses)
+
+        spectrum.remove_spurious_peaks()
+
+        self.assertTrue(len(spectrum.masses) < m_l)
 
 if __name__ == '__main__':
     unittest.main()
