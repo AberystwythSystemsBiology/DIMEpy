@@ -1,7 +1,6 @@
 Getting Started
 ===============
 
-
 To use the package, type the following into your Python console:
 
 .. code:: python

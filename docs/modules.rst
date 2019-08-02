@@ -1,18 +1,17 @@
 Modules
 =======
 
-dimepy.scan
+.. default-domain:: py
+
+dimepy.Scan
 -----------
 
-.. automodule:: dimepy.scan
-   :members:
-   
-   .. autoclass:: Scan
+   .. autoclass:: dimepy.Scan
       :members:
 
       .. automethod:: __init__
 
-dimepy.spectrum
+dimepy.Spectrum
 ---------------
 
 .. automodule:: dimepy.spectrum
@@ -23,7 +22,7 @@ dimepy.spectrum
 
       .. automethod:: __init__
 
-dimepy.spectrumList
+dimepy.SpectrumList
 -------------------
 
 .. automodule:: dimepy.spectrumList
