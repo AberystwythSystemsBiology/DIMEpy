@@ -1,5 +1,6 @@
 import unittest
 from dimepy import Spectrum
+import numpy as np
 import os
 
 scrpt_dir = os.path.dirname(os.path.abspath(__file__))
@@ -27,14 +28,42 @@ class SpectrumTest(unittest.TestCase):
     def test_binning(self):
         spectrum = Spectrum(mzml_fp, "test")
         spectrum.limit_polarity("negative")
-        spectrum._to_use[0] = True
         spectrum.load_scans()
-        spectrum.bin(100)
+
+        # Create our own spectrum for testing purposes
+        spectrum._masses = np.array([0.125, 0.1256, 0.130, 0.149, 0.1495])
+        spectrum._intensities = np.array([50, 60, 100, 10, 50])
+
+        # Apply binning
+        spectrum.bin(0.005)
 
         # Hand calculated, like the sadistic person I am.
-        self.assertAlmostEqual(sum(spectrum.masses), 3742.8, 1)
-        self.assertAlmostEqual(sum(spectrum.intensities), 492923.8, 1)
+        self.assertTrue(np.array_equal(spectrum.masses, np.array([0.1253, 0.13, 0.14925])))
+        self.assertTrue(np.array_equal(spectrum.intensities, np.array([55.0, 100, 30])))
 
 
+    def test_infusion(self):
+        spectrum = Spectrum(mzml_fp, "test")
+        spectrum.limit_polarity("negative")
+        spectrum.load_scans()
+
+        spectrum._to_use = []
+
+        class DuckyScan:
+            def __init__(self, total_ion_count):
+                self.TIC = total_ion_count
+
+        tics = [10, 100, 200, 30, 40, 0, 0]
+
+        for tic in tics:
+            spectrum.scans.append(DuckyScan(tic))
+            spectrum.to_use.append(True)
+
+        spectrum._scans = np.array(spectrum.scans)
+        spectrum._to_use = np.array(spectrum._to_use)
+
+        spectrum.limit_infusion(1)
+
+        self.assertTrue(np.array_equal(spectrum.to_use, np.array([False, True, True, False, False, False, False])))
 if __name__ == '__main__':
     unittest.main()
