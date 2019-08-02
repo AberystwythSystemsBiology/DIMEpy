@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
+
 """
 The class :py:class:`Spectrum` has been designed to load data
 from a mzML file and to represetn the data as a python object.
 
-Note:
+.. note::
     This class is still being actively developed and will likely change over time.
 """
 import numpy as np
@@ -33,10 +34,24 @@ import itertools
 # Boston, MA 02110-1301 USA
 
 class Spectrum(object):
-    """
-    Initialise Spectrum object for a given mzML file.
 
-    Arguments:
+    """ Initialise Spectrum object for a given mzML file.
+
+    """
+
+    def __init__(self,
+                 filepath: str,
+                 identifier: str,
+                 injection_order: int = None,
+                 stratification: str = None,
+                 snr_estimator: str = False,
+                 peak_type: str = "raw",
+                 MS1_precision: float = 5e-6,
+                 MSn_precision: float = 20e-6
+                 ):
+
+        """
+            Args:
         filepath (str): Path to the mzML file to parse.
         identifier (str): Unique identifier for the Spectrum object.
         injection_order (int): The injection number of the Spectrum object.
@@ -53,18 +68,8 @@ class Spectrum(object):
                 * reprofiled
         MS1_precision (float): Measured precision for the MS level 1.
         MSn_precision (float): Measured precision for the MS level n.
-    """
-    def __init__(self,
-                 filepath: str,
-                 identifier: str,
-                 injection_order: int = None,
-                 stratification: str = None,
-                 snr_estimator: str = False,
-                 peak_type: str = "raw",
-                 MS1_precision: float = 5e-6,
-                 MSn_precision: float = 20e-6
-                 ):
 
+    """
         self.filepath = filepath
         self.identifier = identifier
         self.injection_order = injection_order
@@ -115,6 +120,7 @@ class Spectrum(object):
                 Supported polarity types are:
                     * 'positive'
                     * 'negative'
+
         """
 
         def _determine_polarity(scan) -> str:
