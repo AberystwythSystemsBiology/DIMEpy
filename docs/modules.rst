@@ -10,6 +10,7 @@ dimepy.Spectrum
 .. autoclass:: dimepy.spectrum.Spectrum
     :members:
 
+    .. automethod:: __init__
 
 dimepy.SpectrumList
 -------------------

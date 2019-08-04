@@ -51,22 +51,34 @@ class Spectrum(object):
                  ):
 
         """
-            Args:
-        filepath (str): Path to the mzML file to parse.
-        identifier (str): Unique identifier for the Spectrum object.
-        injection_order (int): The injection number of the Spectrum object.
-        stratification (str): Class label of the Spectrum object.
-        snr_estimator (str): Signal to noise method used to filter.
-            Currently supported signal-to-noise estimation methods are:
-                * 'median' (default)
-                * 'mean'
-                * 'mad'
-        peak_type (raw): What peak type to load in.
-            Currently support peak types are:
-                * 'raw' (default)
-                * centroided
-                * reprofiled
+
+        Initialise a Spectrum object for a given mzML file.
+
+        Arguments:
+            filepath (str): Path to the mzML file to parse.
+
+            identifier (str): Unique identifier for the Spectrum object.
+
+            injection_order (int): The injection number of the Spectrum object.
+
+            stratification (str): Class label of the Spectrum object.
+
+            snr_estimator (str): Signal to noise method used to filter.
+
+                Currently supported signal-to-noise estimation methods are:
+                    * 'median' (default)
+                    * 'mean'
+                    * 'mad'
+
+            peak_type (raw): What peak type to load in.
+
+                Currently support peak types are:
+                    * raw (default)
+                    * centroided
+                    * reprofiled
+
         MS1_precision (float): Measured precision for the MS level 1.
+
         MSn_precision (float): Measured precision for the MS level n.
 
     """
@@ -117,6 +129,7 @@ class Spectrum(object):
 
         Arguments:
             polarity (str): polarity type of the scans required
+
                 Supported polarity types are:
                     * 'positive'
                     * 'negative'
@@ -156,6 +169,7 @@ class Spectrum(object):
         be True where the TIC is >= TIC * mad_multiplier.
         
         Arguments:
+
             mad_multiplier (int): The multiplier for the median absolute
                 deviation method to take the infusion profile from.
         
@@ -236,7 +250,9 @@ class Spectrum(object):
 
         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
+
             statistic (str): The statistic to use to calculate bin values.
+
                 Supported statistic types are:
                     * 'mean' (default): compute the mean of intensities for points within each bin.
                         Empty bins will be represented by NaN.
@@ -269,12 +285,15 @@ class Spectrum(object):
 
         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
+
             threshold (float): Percentage of scans in which a peak must be in
                 in order for it to be considered.
+
             scan_grouping (float): Mass-to-ion scan groups, this splits the
                 scans into groups to ease the processing somewhat. It
                 is strongly recommended that you keep this at it's default
                 value of of 50.0
+
         Note:
             load_scans() must first be run in order for this to work.
 

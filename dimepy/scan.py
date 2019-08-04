@@ -29,11 +29,14 @@ class Scan:
                  snr_estimator: str = False,
                  peak_type: str = "raw"):
         """
-            Initalise a Scan object for a given pymzML Spectrum.
+            Initialise a Scan object for a given pymzML Spectrum.
 
-            Args:
+            Arguments:
+
                 pymzml_spectrum (pymzml.Spectrum): Spectrum object.
+
                 snr_estimator (str): Signal to noise method used to filter.
+
                 peak_type (str): Peaks to take forward.
 
         """
