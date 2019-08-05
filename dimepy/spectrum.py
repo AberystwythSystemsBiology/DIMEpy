@@ -72,7 +72,7 @@ class Spectrum(object):
 
             peak_type (raw): What peak type to load in.
 
-                Currently support peak types are:
+                Currently supported peak types are:
                     * raw (default)
                     * centroided
                     * reprofiled
@@ -252,6 +252,7 @@ class Spectrum(object):
             bin_width (float): The mass-to-ion bin-widths to use for binning.
 
             statistic (str): The statistic to use to calculate bin values.
+
                 Supported statistic types are:
                     * 'mean' (default): compute the mean of intensities for points within each bin.
                         Empty bins will be represented by NaN.

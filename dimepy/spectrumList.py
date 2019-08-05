@@ -57,8 +57,12 @@ class SpectrumList:
         Method to locate and remove outlier spectrum using the median-absolute
         deviation of the TICS within the SpectrumList.
 
+        .. note:: This method is still being actively developed, so is likely to
+            change.
+
         Arguments:
             threshold (int): Threshold for MAD outlier detection.
+
             verbose (bool): Whether to print out the identifiers of
                 the removed Spectrum.
         """
@@ -107,6 +111,7 @@ class SpectrumList:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
 
             statistic (str): The statistic to use to calculate bin values.
+
                 Supported statistic types are:
                     * 'mean' (default): compute the mean of intensities for points within each bin.
                         Empty bins will be represented by NaN.
@@ -197,6 +202,16 @@ class SpectrumList:
         Arguments:
             method (str): Method to use for value imputation.
 
+                 Currently supported value imputation methods are:
+                    * 'basic' (default) : Replace thresholded null values
+                        with half the minimum intensity value per Spec
+                    * 'mean': Replace thresholded null values with the
+                        mean intensity value per Spec.
+                    * 'min': Replace thresholded null values with the
+                        minimum intensity value per Spec.
+                    * 'median': Replace thresholded null values with the
+                        minimum intensity value per Spec.
+
             threshold (float): Number of samples an intensity needs to be
                 present in to be taken forward for imputation.
         """
@@ -270,6 +285,12 @@ class SpectrumList:
 
         Arguments:
             method (str): The normalisation method to use.
+
+            Currently supported normalisation methods are:
+                * 'tic' (default): Normalise to the total ion current
+                    of the Spectrum:
+                * 'median': Normalise to the meidan of the Spectrum.
+                * 'mean': Normalise to the mean of the Spectrum.
         """
 
         def _normie(spec: Spectrum):
@@ -300,6 +321,15 @@ class SpectrumList:
 
         Arguments:
             method (str): The transformation method to use.
+
+            Currently supported transformation methods are:
+                *'log10' (default)
+                *'cube'
+                *'nlog'
+                *'log2'
+                *'glog'
+                *'sqrt'
+                *'ihs'
         """
 
         def _transform(spec: Spectrum):
@@ -338,7 +368,14 @@ class SpectrumList:
 
             sep (str): Separator to use for file export
 
-            output_type (str): Output type.
+            output_type (str): What form of output to export:
+
+                Supported output types are:
+                    *'base': masses and intensities of each spectrum in a column each
+                        in a single CSV file.
+                    *'matrix': The way in which I personally analyse the data.
+                        This will not work unless the data has been binned.
+                    *'metaboanalyst': A zipfile ready for uploading to metaboanalyst.
         """
 
         def _to_base():
