@@ -54,10 +54,13 @@ class SpectrumList:
 
     def detect_outliers(self, threshold: float = 1, verbose: bool = False):
         """
-        Method to locate and remove outlier spectrum using MAD.
+        Method to locate and remove outlier spectrum using the median-absolute
+        deviation of the TICS within the SpectrumList.
 
         Arguments:
             threshold (int): Threshold for MAD outlier detection.
+            verbose (bool): Whether to print out the identifiers of
+                the removed Spectrum.
         """
 
         def _get_tics() -> Tuple[np.array, np.array]:
@@ -100,9 +103,25 @@ class SpectrumList:
         Method to conduct mass binning to nominal mass and mass spectrum
         generation across a SpectrumList.
 
-        Arguments:
+         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
+
             statistic (str): The statistic to use to calculate bin values.
+                Supported statistic types are:
+                    * 'mean' (default): compute the mean of intensities for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'std': compute the standard deviation within each bin. This is
+                        implicitly calculated with ddof=0.
+                    * 'median': compute the median of values for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'count': compute the count of points within each bin.
+                        This is identical to an unweighted histogram. values array is not referenced.
+                    * 'sum': compute the sum of values for points within each bin.
+                        This is identical to a weighted histogram.
+                    * 'min': compute the minimum of values for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'max': compute the maximum of values for point within each bin.
+                        Empty bins will be represented by NaN.
         """
 
         def _get_global_mass_range() -> Tuple[float, float]:
@@ -169,12 +188,17 @@ class SpectrumList:
     def value_imputate(self, method: str = "min",
                        threshold: float = 0.5) -> None:
         """
-        A method to deploy value imputation to our spectrum list.
+        A method to deploy value imputation to the Spectrum List.
+
+        .. note:: As most metabolite selection methods fail to deal with missing
+            values, it is strongly recommended to run this method once binning has
+            been performed over the SpectrumList
 
         Arguments:
             method (str): Method to use for value imputation.
+
             threshold (float): Number of samples an intensity needs to be
-            present in to be taken forward for imputation.
+                present in to be taken forward for imputation.
         """
 
         def _extend_spectrum():
@@ -311,7 +335,9 @@ class SpectrumList:
 
         Arguments:
             fp (str): Filepath to export the file to.
-            sep (str): Seperator to use for file export
+
+            sep (str): Separator to use for file export
+
             output_type (str): Output type.
         """
 

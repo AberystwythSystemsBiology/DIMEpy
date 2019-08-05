@@ -244,9 +244,9 @@ class Spectrum(object):
         self._intensities = intensities[sorted_idx]
 
     def bin(self, bin_width: float = 0.01, statistic: str = "mean"):
-        """
+        """"
         Method to conduct mass binning to nominal mass and mass spectrum
-        generation.
+        generation across a Spectrum.
 
         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
@@ -293,9 +293,7 @@ class Spectrum(object):
                 is strongly recommended that you keep this at it's default
                 value of of 50.0
 
-        Note:
-            load_scans() must first be run in order for this to work.
-
+        .. note:: load_scans() must first be run in order for this to work.
         """
 
         def _determine_scan_group():
