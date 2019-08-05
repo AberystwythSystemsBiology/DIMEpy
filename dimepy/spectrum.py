@@ -214,7 +214,7 @@ class Spectrum(object):
         This method loads the scans in accordance to whatever Scans are
         set to True in the to_use list.
 
-        Note: If you want to actually make use of masses and intensities
+        .. note:: If you want to actually make use of masses and intensities
             (you probably do), then ensure that you call this method.
         """
         scans = []
@@ -252,7 +252,6 @@ class Spectrum(object):
             bin_width (float): The mass-to-ion bin-widths to use for binning.
 
             statistic (str): The statistic to use to calculate bin values.
-
                 Supported statistic types are:
                     * 'mean' (default): compute the mean of intensities for points within each bin.
                         Empty bins will be represented by NaN.

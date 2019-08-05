@@ -94,7 +94,24 @@ class Scan:
 
         Arguments:
             bin_width (float): The mass-to-ion bin-widths to use for binning.
+
             statistic (str): The statistic to use to calculate bin values.
+
+                Supported statistic types are:
+                    * 'mean' (default): compute the mean of intensities for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'std': compute the standard deviation within each bin. This is
+                        implicitly calculated with ddof=0.
+                    * 'median': compute the median of values for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'count': compute the count of points within each bin.
+                        This is identical to an unweighted histogram. values array is not referenced.
+                    * 'sum': compute the sum of values for points within each bin.
+                        This is identical to a weighted histogram.
+                    * 'min': compute the minimum of values for points within each bin.
+                        Empty bins will be represented by NaN.
+                    * 'max': compute the maximum of values for point within each bin.
+                        Empty bins will be represented by NaN.
         """
         self.masses, self.intensities = bin_masses_and_intensities(
             self.masses, self.intensities, bin_width, statistic)
