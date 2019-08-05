@@ -22,7 +22,6 @@ dimepy.SpectrumList
 
     .. automethod:: __init__
 
-
 dimepy.Scan
 -----------
 .. automodule:: dimepy.Scan

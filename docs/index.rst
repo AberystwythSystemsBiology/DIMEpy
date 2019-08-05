@@ -68,6 +68,7 @@ v3.0 <https://raw.githubusercontent.com/AberystwythSystemsBiology/DIMEpy/master/
    installation.rst
    getting_started.rst
    modules.rst
+   example_scripts.rst
 
 Indices and tables
 ==================
