@@ -1,6 +1,8 @@
 Example Scripts
 ===============
 
+Here's a quick run through of key functionality in DIMEpy.l
+
 .. code:: python
 
     import dimepy
