@@ -12,8 +12,6 @@
 
 Python package for the high-throughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from mzML files.
 
-This work is very much inspired by the methods detailed in [High-throughput, nontargeted metabolite fingerprinting using nominal mass flow injection electrospray mass spectrometry (Beckmann, et al, 2008)](https://www.nature.com/articles/nprot.2007.500). 
-
 ## Features
 
 - Loading mass spectrometry files from mzML.
