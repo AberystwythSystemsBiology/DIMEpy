@@ -167,3 +167,4 @@ test.p*
 
 .vscode/settings.json
 
+.idea/*
