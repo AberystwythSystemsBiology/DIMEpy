@@ -46,6 +46,7 @@ class Spectrum(object):
                  stratification: str = None,
                  snr_estimator: str = False,
                  peak_type: str = "raw",
+                 is_qc: bool= False,
                  MS1_precision: float = 5e-6,
                  MSn_precision: float = 20e-6
                  ):
@@ -70,16 +71,18 @@ class Spectrum(object):
                     * 'mean'
                     * 'mad'
 
-            peak_type (raw): What peak type to load in.
+            peak_type (str): What peak type to load in.
 
                 Currently supported peak types are:
                     * raw (default)
                     * centroided
                     * reprofiled
 
-        MS1_precision (float): Measured precision for the MS level 1.
+            is_qc (bool): Whether the Sample is QC.
 
-        MSn_precision (float): Measured precision for the MS level n.
+            MS1_precision (float): Measured precision for the MS level 1.
+
+            MSn_precision (float): Measured precision for the MS level n.
 
     """
         self.filepath = filepath
@@ -88,6 +91,7 @@ class Spectrum(object):
         self.stratification = stratification
         self.snr_estimator = snr_estimator
         self.peak_type = peak_type
+        self.is_qc = is_qc
         self.MS1_precision = MS1_precision
         self.MSn_precision = MSn_precision
 

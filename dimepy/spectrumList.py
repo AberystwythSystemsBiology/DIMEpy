@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 import numpy as np
-from scipy.stats import binned_statistic
+from scipy.stats import binned_statistic, median_absolute_deviation
 from .spectrum import Spectrum
 import math
 from typing import Tuple
@@ -287,10 +287,12 @@ class SpectrumList:
             method (str): The normalisation method to use.
 
             Currently supported normalisation methods are:
-                * 'tic' (default): Normalise to the total ion current
-                    of the Spectrum:
-                * 'median': Normalise to the meidan of the Spectrum.
-                * 'mean': Normalise to the mean of the Spectrum.
+                * 'tic' (default): Normalise to the total ion current.
+                * 'median': Normalise to the median.
+                * 'mean': Normalise to the mean.
+                * 'mstus': Normalise using the MS-total useful signal algorithm.
+                * 'mad': Median absolute deviation normalization. Normalization subtracts the median and divides the
+                    intensities by the median absolute deviation (MAD).
         """
 
         def _normie(spec: Spectrum):
@@ -302,6 +304,10 @@ class SpectrumList:
                 spec._intensities = i - np.median(i) * 1000
             elif method.upper() == "MEAN":
                 spec._intensities = i - np.mean(i) * 1000
+            elif method.upper() == "MSTUS":
+                pass
+            elif method.upper() == "MAD":
+                spec._intensities = (i - np.median(i)) / median_absolute_deviation(i) * 1000
             else:
                 raise ValueError("%s is not a valid normalisation method" %
                                  (method))
