@@ -18,6 +18,9 @@
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer
+
 import numpy as np
 from scipy.stats import binned_statistic, median_absolute_deviation
 from .spectrum import Spectrum
@@ -214,16 +217,15 @@ class SpectrumList:
                         minimum intensity value per Spec.
                     * 'median': Replace thresholded null values with the
                         minimum intensity value per Spec.
-                    * 'knn': The KNNImputer class provides imputation for filling in missing values using the k-Nearest
-                        Neighbors approach. By default, a euclidean distance metric that supports missing values,
-                        `nan_euclidean_distances`, is used to find the nearest neighbors. Each missing feature is imputed
-                        using values from `n_neighbors` nearest neighbors that have a value for the feature.
+                    * 'knn': Replace thresholded null values with a KNN calculated intensive value per Spec.
 
 
             threshold (float): Number of samples an intensity needs to be
                 present in to be taken forward for imputation.
 
-            knn_args (dict): A dictionary of arguments to pass to the knn
+            knn_args (dict): A dictionary of arguments to pass to the knn. See
+                https://scikit-learn.org/stable/modules/generated/sklearn.impute.KNNImputer.html#sklearn.impute.KNNImputer
+                for more information.
 
         """
 
@@ -331,7 +333,7 @@ class SpectrumList:
             elif method.upper() == "MEAN":
                 spec._intensities = i - np.mean(i) * 1000
             elif method.upper() == "MSTUS":
-                pass
+                raise NotImplementedError("Not implemented.")
             elif method.upper() == "MAD":
                 spec._intensities = (i - np.median(i)) / median_absolute_deviation(i) * 1000
             else:
