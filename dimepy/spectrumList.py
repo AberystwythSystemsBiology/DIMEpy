@@ -1,17 +1,7 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 
-import numpy as np
-from scipy.stats import binned_statistic, median_absolute_deviation
-from .spectrum import Spectrum
-import math
-from typing import Tuple
-import csv
-import itertools
-import zipfile
-from io import StringIO
-
-# Copyright (c) 2017-2019 Keiron O'Shea
+# Copyright (c) 2017-2020 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public
@@ -27,6 +17,19 @@ from io import StringIO
 # License along with this program; if not, write to the
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+
+import numpy as np
+from scipy.stats import binned_statistic, median_absolute_deviation
+from .spectrum import Spectrum
+import math
+from typing import Tuple
+import csv
+import itertools
+import zipfile
+from io import StringIO
+from sklearn.impute import KNNImputer
+
+
 
 class SpectrumList:
 
@@ -191,7 +194,7 @@ class SpectrumList:
         self.binned = True
 
     def value_imputate(self, method: str = "min",
-                       threshold: float = 0.5) -> None:
+                       threshold: float = 0.5, knn_args: dict = {}) -> None:
         """
         A method to deploy value imputation to the Spectrum List.
 
@@ -211,9 +214,17 @@ class SpectrumList:
                         minimum intensity value per Spec.
                     * 'median': Replace thresholded null values with the
                         minimum intensity value per Spec.
+                    * 'knn': The KNNImputer class provides imputation for filling in missing values using the k-Nearest
+                        Neighbors approach. By default, a euclidean distance metric that supports missing values,
+                        `nan_euclidean_distances`, is used to find the nearest neighbors. Each missing feature is imputed
+                        using values from `n_neighbors` nearest neighbors that have a value for the feature.
+
 
             threshold (float): Number of samples an intensity needs to be
                 present in to be taken forward for imputation.
+
+            knn_args (dict): A dictionary of arguments to pass to the knn
+
         """
 
         def _extend_spectrum():
@@ -249,24 +260,39 @@ class SpectrumList:
                 spec._intensities = spec.intensities[to_keep]
 
         def _apply_imputation():
-            for s in self._list:
-                i = s.intensities
+            if method.upper() == "KNN":
+                X = []
 
-                if method.upper() == "BASIC":
-                    filler = np.nanmin(i) / 2
-                elif method.upper() == "MEAN":
-                    filler = np.mean(i)
-                elif method.upper() == "MIN":
-                    filler = np.nanmin(i)
-                elif method.upper() == "MEDIAN":
-                    filler = np.nanmedian(i)
-                else:
-                    raise ValueError("%s is not a valid imputation method." %
-                                     method)
+                for s in self._list:
+                    X.append(s.intensities)
 
-                i[np.isnan(i)] = filler
+                X = np.array(X)
 
-                s._intensities = i
+                imputer = KNNImputer(**knn_args)
+                X = imputer.fit_transform(X)
+
+                for indx, s in enumerate(self._list):
+                    s._intensities = X[indx:, ]
+
+            else:
+
+                for s in self._list:
+                    i = s.intensities
+
+                    if method.upper() == "BASIC":
+                        filler = np.nanmin(i) / 2
+                    elif method.upper() == "MEAN":
+                        filler = np.mean(i)
+                    elif method.upper() == "MIN":
+                        filler = np.nanmin(i)
+                    elif method.upper() == "MEDIAN":
+                        filler = np.nanmedian(i)
+                    else:
+                        raise ValueError("%s is not a valid imputation method." %
+                                         method)
+
+                    i[np.isnan(i)] = filler
+                    s._intensities = i
 
         if self.binned:
             _extend_spectrum()

@@ -1,3 +1,4 @@
 numpy==1.19.1
 pymzml==2.3.1
 scipy==1.5.2
+sklearn==0.0
