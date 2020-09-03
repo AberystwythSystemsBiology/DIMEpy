@@ -281,8 +281,10 @@ class Spectrum(object):
         intensities = []
 
         for scan in self.read_scans:
-            masses.extend(scan.masses)
-            intensities.extend(scan.intensities)
+            for m, i in zip(scan.masses, scan.intensities):
+                if i > 0.0:
+                    masses.append(m)
+                    intensities.append(i)
 
         masses = np.array(masses)
         intensities = np.array(intensities)

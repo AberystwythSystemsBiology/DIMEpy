@@ -99,43 +99,40 @@ class SpectrumList:
         
             return modified_z_score
 
-        def _plot(mad, to_keep):
+        def _plot(modified_z_score):
             plt.figure()
-            
-            kept = np.array(self._list)[to_keep]
-            removed = np.array(self._list)[np.where(to_keep == False)[0]]
-
-            tk_indexes, tk_tics = zip(*[(indx, s.TIC) for indx, s in enumerate(kept)])
-            plt.scatter(tk_indexes, tk_tics, c="green", label="Samples Kept")
-
-            tr_indexes, tr_tics = zip(*[(indx, s.TIC) for indx, s in enumerate(removed)])
-            plt.scatter(tr_indexes, tr_tics, c="red", label="Samples Removed")                
-
-            plt.axhline(mad, c="red", ls="--", label="MAD")
-            plt.axhline(mad*2, c="black", ls="-.", label="MAD2")
-            plt.axhline(mad*5, c="black", ls="--", label="MAD5")
-            plt.axhline(mad-(mad*2), c="grey", ls="-.", label="-MAD2")
-            plt.axhline(mad-(mad*5), c="grey", ls="--", label="-MAD5")
-            plt.ylabel("Total Ion Current (TIC)")
+            plt.title("Sample TIC Outliers Plot")
+            plt.axhline(threshold, c="red", ls="--", label="T")
+            plt.axhline(threshold*2, c="black", ls="-.", label="T2")
+            plt.axhline(threshold*5, c="black", ls="--", label="T5")
+            plt.ylabel("Modified Z-Score")
             plt.xticks([])
+            plt.scatter(range(0, len(modified_z_score[modified_z_score < threshold])), modified_z_score[modified_z_score < threshold],  s=30, marker="o", c="green", label="Kept")
+            plt.scatter(range(0, len(modified_z_score[modified_z_score >= threshold])), modified_z_score[modified_z_score >= threshold], s=30, c="red", marker="v", label="Removed")
             plt.legend()
-            plt.show()
+            plt.tight_layout()
+            if type(plot) == bool:
+                plt.show()
+            else:
+                plt.savefig(plot)
 
         tics = _get_tics()
         mad = _calculate_mad(tics)
         modified_z_score = _get_mask(tics, mad)
 
-        to_keep = modified_z_score <= threshold
-
+        to_keep = modified_z_score < threshold
 
         if plot:
-            _plot(mad, to_keep)
+            _plot(modified_z_score)
+
+        _list = np.array(self._list)
 
         if verbose:
+            
             print("Detected Outliers: %s" %
                   ";".join([x.identifier for x in _list[~to_keep]]))
 
-        self._list = np.array(self._list[to_keep]).tolist()
+        self._list = _list[to_keep].tolist()
 
     def bin(self, bin_width: float = 0.5, statistic: str = "mean"):
         """
@@ -225,7 +222,7 @@ class SpectrumList:
 
         self.binned = True
 
-    def value_imputate(self, method: str = "min",
+    def value_imputate(self, method: str = "basic",
                        threshold: float = 0.5, knn_args: dict = {}) -> None:
         """
         A method to deploy value imputation to the Spectrum List.
@@ -309,7 +306,6 @@ class SpectrumList:
 
                 for s in self._list:
                     i = s.intensities
-
                     if method.upper() == "BASIC":
                         filler = np.nanmin(i) / 2
                     elif method.upper() == "MEAN":
@@ -483,10 +479,11 @@ class SpectrumList:
             zf.close()
 
         def _to_matrix():
-            _output = np.ndarray(
-                (len(self._list[0].masses) + 1, len(self._list) + 1),
+            _output = np.ndarray((
+                len(self._list) + 1,
+                len(self._list[0].masses) + 1),
                 dtype=object)
-
+            
             _output[0][0] = "Sample ID"
             _output[0][1:] = self._list[0].masses
 
