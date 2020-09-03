@@ -31,6 +31,7 @@ import itertools
 import zipfile
 from io import StringIO
 from sklearn.impute import KNNImputer
+import matplotlib.pyplot as plt
 
 
 
@@ -58,7 +59,7 @@ class SpectrumList:
         else:
             raise ValueError("SpectrumList only accepts Spectrum objects.")
 
-    def detect_outliers(self, threshold: float = 1, verbose: bool = False):
+    def detect_outliers(self, threshold: float = 1, verbose: bool = False, plot: bool = False):
         """
         Method to locate and remove outlier spectrum using the median-absolute
         deviation of the TICS within the SpectrumList.
@@ -71,6 +72,8 @@ class SpectrumList:
 
             verbose (bool): Whether to print out the identifiers of
                 the removed Spectrum.
+
+            plot (bool): Plot the results.
         """
 
         def _get_tics() -> Tuple[np.array, np.array]:
@@ -93,20 +96,46 @@ class SpectrumList:
             med_abs_deviation = np.median(diff)
 
             modified_z_score = 0.6745 * diff / med_abs_deviation
+        
+            return modified_z_score
 
-            return modified_z_score <= threshold
+        def _plot(mad, to_keep):
+            plt.figure()
+            
+            kept = np.array(self._list)[to_keep]
+            removed = np.array(self._list)[np.where(to_keep == False)[0]]
+
+            tk_indexes, tk_tics = zip(*[(indx, s.TIC) for indx, s in enumerate(kept)])
+            plt.scatter(tk_indexes, tk_tics, c="green", label="Samples Kept")
+
+            tr_indexes, tr_tics = zip(*[(indx, s.TIC) for indx, s in enumerate(removed)])
+            plt.scatter(tr_indexes, tr_tics, c="red", label="Samples Removed")                
+
+            plt.axhline(mad, c="red", ls="--", label="MAD")
+            plt.axhline(mad*2, c="black", ls="-.", label="MAD2")
+            plt.axhline(mad*5, c="black", ls="--", label="MAD5")
+            plt.axhline(mad-(mad*2), c="grey", ls="-.", label="-MAD2")
+            plt.axhline(mad-(mad*5), c="grey", ls="--", label="-MAD5")
+            plt.ylabel("Total Ion Current (TIC)")
+            plt.xticks([])
+            plt.legend()
+            plt.show()
 
         tics = _get_tics()
         mad = _calculate_mad(tics)
-        to_keep = _get_mask(tics, mad)
+        modified_z_score = _get_mask(tics, mad)
 
-        _list = np.array(self._list)
+        to_keep = modified_z_score <= threshold
+
+
+        if plot:
+            _plot(mad, to_keep)
 
         if verbose:
             print("Detected Outliers: %s" %
                   ";".join([x.identifier for x in _list[~to_keep]]))
 
-        self._list = _list[to_keep].tolist()
+        self._list = np.array(self._list[to_keep]).tolist()
 
     def bin(self, bin_width: float = 0.5, statistic: str = "mean"):
         """

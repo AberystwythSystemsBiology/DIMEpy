@@ -1,22 +1,7 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 
-"""
-The class :py:class:`Spectrum` has been designed to load data
-from a mzML file and to represetn the data as a python object.
-
-.. note::
-    This class is still being actively developed and will likely change over time.
-"""
-import numpy as np
-from typing import Tuple, List
-from scipy.stats import binned_statistic
-from pymzml.run import Reader as pymzmlReader
-from .scan import Scan
-from .utils import terms, bin_masses_and_intensities
-import itertools
-
-# Copyright (c) 2017-2019 Keiron O'Shea
+# Copyright (c) 2017-2020 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public
@@ -33,6 +18,25 @@ import itertools
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
 
+
+import numpy as np
+import logging
+from typing import Tuple, List
+from scipy.stats import binned_statistic
+from pymzml.run import Reader as pymzmlReader
+from .scan import Scan
+from .utils import terms, bin_masses_and_intensities
+import itertools
+import matplotlib.pyplot as plt
+
+"""
+The class :py:class:`Spectrum` has been designed to load data
+from a mzML file.
+
+.. note::
+    This class is still being actively developed and will likely change over time.
+"""
+
 class Spectrum(object):
 
     """ Initialise Spectrum object for a given mzML file.
@@ -41,7 +45,7 @@ class Spectrum(object):
 
     def __init__(self,
                  filepath: str,
-                 identifier: str,
+                 identifier: str = None,
                  injection_order: int = None,
                  stratification: str = None,
                  snr_estimator: str = False,
@@ -58,7 +62,8 @@ class Spectrum(object):
         Arguments:
             filepath (str): Path to the mzML file to parse.
 
-            identifier (str): Unique identifier for the Spectrum object.
+            identifier (str): Unique identifier for the Spectrum object. If none is given,
+                it will default to the filepath.
 
             injection_order (int): The injection number of the Spectrum object.
 
@@ -87,6 +92,10 @@ class Spectrum(object):
     """
         self.filepath = filepath
         self.identifier = identifier
+
+        if identifier == None:
+            self.identifier = filepath
+
         self.injection_order = injection_order
         self.stratification = stratification
         self.snr_estimator = snr_estimator
@@ -102,6 +111,8 @@ class Spectrum(object):
         self._scans, self._to_use = self._base_load()
 
     def _base_load(self) -> Tuple[np.array, np.array]:
+
+        logging.info("Loading %s" % (self.filepath))
 
         extraAccessions = [
             [[y, ["value"]] for y in terms[x]] for x in terms.keys()
@@ -126,7 +137,7 @@ class Spectrum(object):
 
         return np.array(scans), np.array(to_use)
 
-    def limit_polarity(self, polarity: str) -> None:
+    def limit_polarity(self, polarity: str, verbose: bool = False) -> None:
         """
         Limit the Scans found within the mzML file to whatever polarity is given.
         This should only be called where fast-polarity switching is used.
@@ -138,21 +149,30 @@ class Spectrum(object):
                     * 'positive'
                     * 'negative'
 
+            verbose (bool): enable verbose output.
+
         """
+
+        if polarity.upper() not in ["POSITIVE", "NEGATIVE"]:
+            raise AttributeError("%s not a valid option" % (polarity))
 
         def _determine_polarity(scan) -> str:
             scan_polarity = None
             for polarity_acc in terms["polarity"]:
                 if scan.get(polarity_acc) != None:
                     scan_polarity = terms["polarity"][polarity_acc]
-
             return scan_polarity
 
         for index, scan in enumerate(self._scans):
             if _determine_polarity(scan) != polarity.upper():
                 self._to_use[index] = False
+                logging.info("Scan %i is not %s polarity" % (index, polarity))
 
-    def limit_infusion(self, threshold: int = 3) -> None:
+            if verbose and self._to_use[index]:
+                print("Scan %i is %s polarity" % (index, polarity))
+
+
+    def limit_infusion(self, threshold: int = 3, plot = False) -> None:
         """
         This method is a slight extension of Manfred Beckmann's (meb@aber.ac.uk)
         LCT/Q-ToF scan retrieval method in FIEMSpro in which we use the median absolute
@@ -165,7 +185,7 @@ class Spectrum(object):
                 / \ 
                /   \_
           ____/       \_________________
-          0     0.5     1     1.5     2 [min]
+          0     0.5     1     1.5     n [scan number]
               |--------| Apex
         
         We are only interested in the scans in which the infusion takes place
@@ -176,7 +196,9 @@ class Spectrum(object):
 
             mad_multiplier (int): The multiplier for the median absolute
                 deviation method to take the infusion profile from.
-        
+
+            plot (bool): Plot the results.
+
         """
 
         def _calculate_mad(tics: np.array) -> float:
@@ -194,10 +216,33 @@ class Spectrum(object):
 
             return modified_z_score >= threshold
 
+        def _plot(tics: np.array, mad: float, ini_scan: int, end_scan: int):
+            plt.figure()
+            plt.title("Apex Selection Plot \n%s" % (self.identifier))
+            plt.plot(tics)
+            plt.xlim(0, len(tics))
+            plt.ylim(0, max(tics * 1.1))
+            plt.axvline(ini_scan, ls="--", c="red")
+            plt.axvline(end_scan, ls="--", c="red")
+            plt.xlabel("Scan Number")
+            plt.ylabel("Total Ion Current (TIC)")
+            plt.tight_layout()
+            if type(plot) == bool:
+                plt.show()
+            else:
+                plt.savefig(plot)
+
         tics = np.array([scan.TIC for scan in self._scans[self._to_use]])
         mad = _calculate_mad(tics)
-
         apex_index = _get_mask(tics, mad)
+
+        logging.info("Mean Absolute Deviation Calculated as %f TIC" % (mad))
+
+        ini_scan = np.min(np.where(apex_index == True)[0])
+        end_scan = np.max(np.where(apex_index == True)[0])
+
+        if plot:
+            _plot(tics, mad, ini_scan, end_scan)
 
         to_use = np.where(self._to_use == True)[0]
 
@@ -391,6 +436,10 @@ class Spectrum(object):
             return self._intensities
         else:
             raise ValueError("No intensities generated, run load_scans() first!")
+    
+    @property
+    def TIC(self) -> float:
+        return sum(self.intensities)
 
     @property
     def to_use(self) -> List[bool]:
