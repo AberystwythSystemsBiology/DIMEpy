@@ -1,17 +1,7 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 
-import numpy as np
-from scipy.stats import binned_statistic
-from .spectrum import Spectrum
-import math
-from typing import Tuple
-import csv
-import itertools
-import zipfile
-from io import StringIO
-
-# Copyright (c) 2017-2019 Keiron O'Shea
+# Copyright (c) 2017-2020 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public
@@ -27,6 +17,23 @@ from io import StringIO
 # License along with this program; if not, write to the
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer
+
+import numpy as np
+from scipy.stats import binned_statistic, median_absolute_deviation
+from .spectrum import Spectrum
+import math
+from typing import Tuple
+import csv
+import itertools
+import zipfile
+from io import StringIO
+from sklearn.impute import KNNImputer
+import matplotlib.pyplot as plt
+
+
 
 class SpectrumList:
 
@@ -52,7 +59,7 @@ class SpectrumList:
         else:
             raise ValueError("SpectrumList only accepts Spectrum objects.")
 
-    def detect_outliers(self, threshold: float = 1, verbose: bool = False):
+    def detect_outliers(self, threshold: float = 1, verbose: bool = False, plot: bool = False):
         """
         Method to locate and remove outlier spectrum using the median-absolute
         deviation of the TICS within the SpectrumList.
@@ -65,6 +72,8 @@ class SpectrumList:
 
             verbose (bool): Whether to print out the identifiers of
                 the removed Spectrum.
+
+            plot (bool): Plot the results.
         """
 
         def _get_tics() -> Tuple[np.array, np.array]:
@@ -87,16 +96,39 @@ class SpectrumList:
             med_abs_deviation = np.median(diff)
 
             modified_z_score = 0.6745 * diff / med_abs_deviation
+        
+            return modified_z_score
 
-            return modified_z_score <= threshold
+        def _plot(modified_z_score):
+            plt.figure()
+            plt.title("Sample TIC Outliers Plot")
+            plt.axhline(threshold, c="red", ls="--", label="T")
+            plt.axhline(threshold*2, c="black", ls="-.", label="T2")
+            plt.axhline(threshold*5, c="black", ls="--", label="T5")
+            plt.ylabel("Modified Z-Score")
+            plt.xticks([])
+            plt.scatter(range(0, len(modified_z_score[modified_z_score < threshold])), modified_z_score[modified_z_score < threshold],  s=30, marker="o", c="green", label="Kept")
+            plt.scatter(range(0, len(modified_z_score[modified_z_score >= threshold])), modified_z_score[modified_z_score >= threshold], s=30, c="red", marker="v", label="Removed")
+            plt.legend()
+            plt.tight_layout()
+            if type(plot) == bool:
+                plt.show()
+            else:
+                plt.savefig(plot)
 
         tics = _get_tics()
         mad = _calculate_mad(tics)
-        to_keep = _get_mask(tics, mad)
+        modified_z_score = _get_mask(tics, mad)
+
+        to_keep = modified_z_score < threshold
+
+        if plot:
+            _plot(modified_z_score)
 
         _list = np.array(self._list)
 
         if verbose:
+            
             print("Detected Outliers: %s" %
                   ";".join([x.identifier for x in _list[~to_keep]]))
 
@@ -190,8 +222,8 @@ class SpectrumList:
 
         self.binned = True
 
-    def value_imputate(self, method: str = "min",
-                       threshold: float = 0.5) -> None:
+    def value_imputate(self, method: str = "basic",
+                       threshold: float = 0.5, knn_args: dict = {}) -> None:
         """
         A method to deploy value imputation to the Spectrum List.
 
@@ -211,9 +243,16 @@ class SpectrumList:
                         minimum intensity value per Spec.
                     * 'median': Replace thresholded null values with the
                         minimum intensity value per Spec.
+                    * 'knn': Replace thresholded null values with a KNN calculated intensive value per Spec.
+
 
             threshold (float): Number of samples an intensity needs to be
                 present in to be taken forward for imputation.
+
+            knn_args (dict): A dictionary of arguments to pass to the knn. See
+                https://scikit-learn.org/stable/modules/generated/sklearn.impute.KNNImputer.html#sklearn.impute.KNNImputer
+                for more information.
+
         """
 
         def _extend_spectrum():
@@ -249,24 +288,38 @@ class SpectrumList:
                 spec._intensities = spec.intensities[to_keep]
 
         def _apply_imputation():
-            for s in self._list:
-                i = s.intensities
+            if method.upper() == "KNN":
+                X = []
 
-                if method.upper() == "BASIC":
-                    filler = np.nanmin(i) / 2
-                elif method.upper() == "MEAN":
-                    filler = np.mean(i)
-                elif method.upper() == "MIN":
-                    filler = np.nanmin(i)
-                elif method.upper() == "MEDIAN":
-                    filler = np.nanmedian(i)
-                else:
-                    raise ValueError("%s is not a valid imputation method." %
-                                     method)
+                for s in self._list:
+                    X.append(s.intensities)
 
-                i[np.isnan(i)] = filler
+                X = np.array(X)
 
-                s._intensities = i
+                imputer = KNNImputer(**knn_args)
+                X = imputer.fit_transform(X)
+
+                for indx, s in enumerate(self._list):
+                    s._intensities = X[indx:, ]
+
+            else:
+
+                for s in self._list:
+                    i = s.intensities
+                    if method.upper() == "BASIC":
+                        filler = np.nanmin(i) / 2
+                    elif method.upper() == "MEAN":
+                        filler = np.mean(i)
+                    elif method.upper() == "MIN":
+                        filler = np.nanmin(i)
+                    elif method.upper() == "MEDIAN":
+                        filler = np.nanmedian(i)
+                    else:
+                        raise ValueError("%s is not a valid imputation method." %
+                                         method)
+
+                    i[np.isnan(i)] = filler
+                    s._intensities = i
 
         if self.binned:
             _extend_spectrum()
@@ -287,10 +340,12 @@ class SpectrumList:
             method (str): The normalisation method to use.
 
             Currently supported normalisation methods are:
-                * 'tic' (default): Normalise to the total ion current
-                    of the Spectrum:
-                * 'median': Normalise to the meidan of the Spectrum.
-                * 'mean': Normalise to the mean of the Spectrum.
+                * 'tic' (default): Normalise to the total ion current.
+                * 'median': Normalise to the median.
+                * 'mean': Normalise to the mean.
+                * 'mstus': Normalise using the MS-total useful signal algorithm.
+                * 'mad': Median absolute deviation normalization. Normalization subtracts the median and divides the
+                    intensities by the median absolute deviation (MAD).
         """
 
         def _normie(spec: Spectrum):
@@ -302,6 +357,10 @@ class SpectrumList:
                 spec._intensities = i - np.median(i) * 1000
             elif method.upper() == "MEAN":
                 spec._intensities = i - np.mean(i) * 1000
+            elif method.upper() == "MSTUS":
+                raise NotImplementedError("Not implemented.")
+            elif method.upper() == "MAD":
+                spec._intensities = (i - np.median(i)) / median_absolute_deviation(i) * 1000
             else:
                 raise ValueError("%s is not a valid normalisation method" %
                                  (method))
@@ -420,10 +479,11 @@ class SpectrumList:
             zf.close()
 
         def _to_matrix():
-            _output = np.ndarray(
-                (len(self._list[0].masses) + 1, len(self._list) + 1),
+            _output = np.ndarray((
+                len(self._list) + 1,
+                len(self._list[0].masses) + 1),
                 dtype=object)
-
+            
             _output[0][0] = "Sample ID"
             _output[0][1:] = self._list[0].masses
 
