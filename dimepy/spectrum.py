@@ -27,6 +27,7 @@ from pymzml.run import Reader as pymzmlReader
 from .scan import Scan
 from .utils import terms, bin_masses_and_intensities
 import itertools
+import os
 import matplotlib.pyplot as plt
 
 """
@@ -94,7 +95,7 @@ class Spectrum(object):
         self.identifier = identifier
 
         if identifier == None:
-            self.identifier = filepath
+            self.identifier = os.path.basename(filepath)
 
         self.injection_order = injection_order
         self.stratification = stratification

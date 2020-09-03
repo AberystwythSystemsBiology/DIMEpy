@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
 # encoding: utf-8
 
-from typing import Tuple
-from scipy.stats import binned_statistic
-from scipy.ndimage import find_objects
-import numpy as np
-
 # Copyright (c) 2017-2019 Keiron O'Shea
 #
 # This program is free software; you can redistribute it and/or
@@ -22,6 +17,13 @@ import numpy as np
 # License along with this program; if not, write to the
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
 # Boston, MA 02110-1301 USA
+
+from typing import Tuple
+from scipy.stats import binned_statistic
+from scipy.ndimage import find_objects
+import numpy as np
+
+
 
 terms = {"polarity": {"MS:1000129": "NEGATIVE", "MS:1000130": "POSITIVE"}}
 
