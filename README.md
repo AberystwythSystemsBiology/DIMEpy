@@ -10,6 +10,21 @@
 [![Downloads](https://pepy.tech/badge/dimepy)](https://pepy.tech/project/dimepy)
 [![Build Status](https://travis-ci.org/AberystwythSystemsBiology/DIMEpy.svg?branch=master)](https://travis-ci.org/AberystwythSystemsBiology/DIMEpy)
 
+
+> ## Important news about the future of this project
+> 
+> It has been more than 4 years since I started this project as a learning excercise in metabolomics. Since then the project has been downloaded almost 50,000 times! I am appreciative of everyone that has got in contact with me over the past couple of years with comments and suggestions, I've met a number of amazing people from this project and I'll forever see this as a key driver in pushing me on in the field of metabolomics.
+> 
+> Unfortunately, this project has become somewhat of a burden in recent years and I am overwhelmed with emails asking for assistance. I have asked numerous times for people to submit problems via the issues tracker, but this has sadly fallen on deaf ears. So, with all of the above in mind, I've decided to archive this project as read-only and suggest that those interested in new updates or submitting patches fork the project.
+>  
+> If you really like this project, that's ok too!  The project is [GPL licensed](https://github.com/AberystwythSystemsBiology/DIMEpy/blob/master/LICENSE), so you can fork it and run it on whatever you like so long as you respect the terms of said license.
+> 
+> For my part, I'm extremely proud to have led this project, and I'm sorry I've been unable to commit more time to it for everyone.  I hope you all understand.
+> 
+> Best wishes,
+> [Keiron](https://github.com/keirono)
+
+
 Python package for the high-throughput nontargeted metabolite fingerprinting of nominal mass direct injection mass spectrometry directly from mzML files.
 
 ## Features
